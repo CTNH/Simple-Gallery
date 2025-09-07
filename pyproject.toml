@@ -5,6 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "gallery"
 version = "0.1"
+dependencies = [
+	"ffmpeg-python",
+	"pillow",
+	"pillow-heif",
+	"exifread"
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
