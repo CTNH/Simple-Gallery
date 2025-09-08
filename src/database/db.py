@@ -13,22 +13,13 @@ class Database:
         self.curs = self.conn.cursor()
         self.curs.execute(schema.CREATE_TABLES)
 
-    def addFromPath(self, dirpath: str):
-        # Recursively list all files
-        for fpath in list(Path(dirpath).rglob('*')):
-            metadata = MetaExtract(fspath(fpath))
-            # Not supported
-            if metadata is None:
-                continue
+    def addImage(self, metadata: dict):
+        self.curs.execute(
+            schema.INSERT_IMAGES(),
+            # Default to None if no key
+            defaultdict(lambda: None, metadata)
+        )
 
-            metadata['sha1'] = SHA1(fspath(fpath))
-            metadata['path'] = fspath(fpath)
-            self.curs.execute(
-                schema.INSERT_IMAGES(),
-                # Default to None if no key
-                defaultdict(lambda: None, metadata)
-            )
-
-        # Write changes to disk
+    def commit(self):
         self.conn.commit()
 
