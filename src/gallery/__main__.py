@@ -1,13 +1,14 @@
 from src.database.db import Database
 from pathlib import Path
 from src.media.metadataExtract import MetaExtract
-from os import fspath
+from os import fspath, sep, getcwd
 from src.utils.filehash import SHA1
 from os.path import join as pathJoin
 from src.media.thumbnails import ImgThumbnail
 from src.media.mediatype import MediaType, GetMediaType
 from src.utils.paths import CreatePath
 import tomllib
+from .app import Run
 
 
 # Entry point
@@ -22,9 +23,7 @@ def main():
     THUMBNAIL_SIZES = config["media"]["thumbnail_size"]
 
     HASH_METHOD = SHA1
-
     CreatePath(DATA_PATH)
-
     db = Database(pathJoin(DATA_PATH, DATABASE_NAME))
     COMMIT_BATCH_SIZE = config["database"]["commit_batch_size"]
     batchSize = 0
@@ -39,6 +38,7 @@ def main():
         print(f"Processing {fpath}")
         metadata['hash'] = HASH_METHOD(mediaPath)
         metadata['path'] = mediaPath
+        metadata['ratio'] = metadata['width'] / metadata['height']
 
         for tSize in THUMBNAIL_SIZES:
             imgThumbnailPath = pathJoin(

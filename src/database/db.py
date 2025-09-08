@@ -10,14 +10,24 @@ class Database:
         for statement in schema.CREATE_TABLES:
             self.curs.execute(statement)
 
+    # Deconstructor
+    def __del__(self):
+        self.conn.close()
+
     def addImage(self, metadata: dict):
         for statement in schema.INSERT_IMAGES:
-            self.curs.execute(
-                statement,
-                # Default to None if no key
-                defaultdict(lambda: None, metadata)
-            )
+            try:
+                self.curs.execute(
+                    statement,
+                    # Default to None if no key
+                    defaultdict(lambda: None, metadata)
+                )
+            except Exception:
+                print(f"INSERT FAILED: {metadata['path']}")
 
     def commit(self):
         self.conn.commit()
 
+    def getImages(self) -> tuple:
+        self.curs.execute(schema.GET_IMAGES)
+        return self.curs.fetchall()
