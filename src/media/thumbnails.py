@@ -1,6 +1,5 @@
 from PIL import Image
-from os.path import dirname, exists
-from os import makedirs
+from src.utils.paths import CreatePath
 
 
 def ImgThumbnail(imgPath: str, thumbnailPath: str, size: tuple[int, int]):
@@ -8,10 +7,7 @@ def ImgThumbnail(imgPath: str, thumbnailPath: str, size: tuple[int, int]):
     img = Image.open(imgPath).copy()
     img.thumbnail(size)
 
-    # Ensure the output directory exists, create if necessary
-    output_dir = dirname(thumbnailPath)
-    if output_dir and not exists(output_dir):
-        makedirs(output_dir, exist_ok=True)
+    CreatePath(thumbnailPath)
 
     # Disgard alpha channel in case of jpg
     img = img.convert("RGB")

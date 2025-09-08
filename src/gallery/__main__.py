@@ -6,20 +6,23 @@ from src.utils.filehash import SHA1
 from os.path import join as pathJoin
 from src.media.thumbnails import ImgThumbnail
 from src.media.mediatype import MediaType, GetMediaType
+from src.utils.paths import CreatePath
 
 
 # Entry point
 def main():
-    db = Database("gallery.db")
-
     MEDIA_PATH = "./images/"
     DATA_PATH = "./gallery_data/"
+    DATABASE_NAME = "gallery.db"
     THUMBNAIL_PATH = pathJoin(DATA_PATH, "thumbnails")
     THUMBNAIL_SIZES = [
-        720
+        300, 720
     ]
     HASH_METHOD = SHA1
 
+    CreatePath(DATA_PATH)
+
+    db = Database(pathJoin(DATA_PATH, DATABASE_NAME))
     # Recursively list all files
     for fpath in list(Path(MEDIA_PATH).rglob('*')):
         mediaPath = fspath(fpath)
