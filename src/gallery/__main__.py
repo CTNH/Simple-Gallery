@@ -3,6 +3,8 @@ from pathlib import Path
 from src.media.metadataExtract import MetaExtract
 from os import fspath
 from src.utils.filehash import SHA1
+from os.path import join as pathJoin
+from src.media.thumbnails import ImgThumbnail
 
 
 # Entry point
@@ -10,16 +12,36 @@ def main():
     db = Database("gallery.db")
 
     MEDIA_PATH = "./images/"
+    DATA_PATH = "./gallery_data/"
+    THUMBNAIL_PATH = pathJoin(DATA_PATH, "thumbnails")
+    THUMBNAIL_SIZES = [
+        720
+    ]
+    HASH_METHOD = SHA1
 
     # Recursively list all files
     for fpath in list(Path(MEDIA_PATH).rglob('*')):
-        metadata = MetaExtract(fspath(fpath))
+        mediaPath = fspath(fpath)
+        metadata = MetaExtract(mediaPath)
         # Not supported; skip
         if metadata is None:
             continue
 
-        metadata['sha1'] = SHA1(fspath(fpath))
-        metadata['path'] = fspath(fpath)
+        print(f"Processing {fpath}")
+        metadata['hash'] = HASH_METHOD(mediaPath)
+        metadata['path'] = mediaPath
+
+        for tSize in THUMBNAIL_SIZES:
+            imgThumbnailPath = pathJoin(
+                THUMBNAIL_PATH,
+                metadata['hash'][:2],
+                metadata['hash'][2:4],
+                metadata['hash'][4:] + f"-{tSize}.jpg"
+            )
+
+            # TODO check if is img
+            ImgThumbnail(mediaPath, imgThumbnailPath, (tSize, tSize))
+
         db.addImage(metadata)
 
     # Write changes to disk
