@@ -1,0 +1,7 @@
+[paths]
+media = "./images/"
+data = "./gallery_data/"
+
+[media]
+thumbnail_size = [ 300, 720 ]
+

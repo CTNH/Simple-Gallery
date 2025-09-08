@@ -7,17 +7,20 @@ from os.path import join as pathJoin
 from src.media.thumbnails import ImgThumbnail
 from src.media.mediatype import MediaType, GetMediaType
 from src.utils.paths import CreatePath
+import tomllib
 
 
 # Entry point
 def main():
-    MEDIA_PATH = "./images/"
-    DATA_PATH = "./gallery_data/"
+    with open("config/config.toml", "rb") as f:
+        config = tomllib.load(f)
+
+    MEDIA_PATH = config["paths"]["media"]
+    DATA_PATH = config["paths"]["data"]
     DATABASE_NAME = "gallery.db"
     THUMBNAIL_PATH = pathJoin(DATA_PATH, "thumbnails")
-    THUMBNAIL_SIZES = [
-        300, 720
-    ]
+    THUMBNAIL_SIZES = config["media"]["thumbnail_size"]
+
     HASH_METHOD = SHA1
 
     CreatePath(DATA_PATH)
