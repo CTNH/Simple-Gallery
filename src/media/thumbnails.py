@@ -13,6 +13,7 @@ def ImgThumbnail(imgPath: str, thumbnailPath: str, size: tuple[int, int]):
     if output_dir and not exists(output_dir):
         makedirs(output_dir, exist_ok=True)
 
+    # Disgard alpha channel in case of jpg
     img = img.convert("RGB")
     img.save(thumbnailPath)
 

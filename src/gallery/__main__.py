@@ -5,6 +5,7 @@ from os import fspath
 from src.utils.filehash import SHA1
 from os.path import join as pathJoin
 from src.media.thumbnails import ImgThumbnail
+from src.media.mediatype import MediaType, GetMediaType
 
 
 # Entry point
@@ -39,8 +40,11 @@ def main():
                 metadata['hash'][4:] + f"-{tSize}.jpg"
             )
 
-            # TODO check if is img
-            ImgThumbnail(mediaPath, imgThumbnailPath, (tSize, tSize))
+            mtype = GetMediaType(mediaPath)
+            if mtype is MediaType.IMAGE:
+                ImgThumbnail(mediaPath, imgThumbnailPath, (tSize, tSize))
+            elif mtype is MediaType.VIDEO:
+                pass
 
         db.addImage(metadata)
 
