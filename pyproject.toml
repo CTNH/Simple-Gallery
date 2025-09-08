@@ -9,7 +9,8 @@ dependencies = [
 	"ffmpeg-python",
 	"pillow",
 	"pillow-heif",
-	"exifread"
+	"exifread",
+	"Flask"
 ]
 
 [tool.setuptools.packages.find]

@@ -11,11 +11,7 @@ import tomllib
 from .app import Run
 
 
-# Entry point
-def main():
-    with open("config/config.toml", "rb") as f:
-        config = tomllib.load(f)
-
+def initialize(config: dict):
     MEDIA_PATH = config["paths"]["media"]
     DATA_PATH = config["paths"]["data"]
     DATABASE_NAME = "gallery.db"
@@ -63,6 +59,40 @@ def main():
             batchSize = 0
     # Last batch
     db.commit()
+
+
+# Entry point
+def main():
+    with open("config/config.toml", "rb") as f:
+        config = tomllib.load(f)
+
+    init = False
+    if init:
+        initialize(config)
+    else:
+        CreatePath(config["paths"]["data"])
+        db = Database(pathJoin(config["paths"]["data"], "gallery.db"))
+
+        imgs = []
+        for row in db.getImages():
+            # hash, path, date, size, ratio, width, height, maker, model
+            fname = f'{row[0][4:]}-{config["media"]["thumbnail_size"][0]}.jpg'
+            fpath = pathJoin(row[0][:2], row[0][2:4], fname)
+            imgs.append({
+                'filename': fname,
+                'path': f'/images/{fpath.replace(sep, "/")}',
+                'aspectRatio': row[4]
+            })
+
+        thumbnailsFolder = pathJoin(config["paths"]["data"], "thumbnails")
+        # Set to absolute path if is relative
+        if not thumbnailsFolder.startswith('/'):
+            thumbnailsFolder = pathJoin(getcwd(), thumbnailsFolder)
+
+        Run(
+            config['server']['host'], config['server']['port'],
+            thumbnailsFolder, imgs
+        )
 
 
 if __name__ == "__main__":
