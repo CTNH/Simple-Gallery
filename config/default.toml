@@ -5,3 +5,6 @@ data = "./gallery_data/"
 [media]
 thumbnail_size = [ 300, 720 ]
 
+[database]
+commit_batch_size = 200
+

@@ -26,6 +26,8 @@ def main():
     CreatePath(DATA_PATH)
 
     db = Database(pathJoin(DATA_PATH, DATABASE_NAME))
+    COMMIT_BATCH_SIZE = config["database"]["commit_batch_size"]
+    batchSize = 0
     # Recursively list all files
     for fpath in list(Path(MEDIA_PATH).rglob('*')):
         mediaPath = fspath(fpath)
@@ -54,7 +56,12 @@ def main():
 
         db.addImage(metadata)
 
-    # Write changes to disk
+        batchSize += 1
+        # Write changes to disk in batch
+        if batchSize >= COMMIT_BATCH_SIZE:
+            db.commit()
+            batchSize = 0
+    # Last batch
     db.commit()
 
 
