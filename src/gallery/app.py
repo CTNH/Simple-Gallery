@@ -1,6 +1,4 @@
-from flask import Flask, render_template, send_from_directory, jsonify
-import os
-from PIL import Image
+from flask import Flask, render_template, send_from_directory, jsonify, send_file, abort
 
 app = Flask(__name__)
 
@@ -21,13 +19,28 @@ def get_images():
     """API endpoint to get all images with their aspect ratios"""
     # images = scan_images()
     # return jsonify(images)
-    return jsonify(IMAGES)
+    return jsonify(IMAGES['info'])
 
 
-@app.route('/images/<path:filename>')
-def serve_image(filename):
-    """Serve individual images from subdirectories"""
-    return send_from_directory(IMAGES_FOLDER, filename)
+@app.route('/image/<path:hash>')
+def serve_image(hash):
+    if hash in IMAGES['path']:
+        return send_from_directory(
+            IMAGES_FOLDER,
+            IMAGES['path'][hash]['thumbnail']
+        )
+    else:
+        abort(404)
+
+
+@app.route('/originalimage/<path:hash>')
+def serve_originalImage(hash):
+    if hash in IMAGES['path']:
+        return send_file(
+            IMAGES['path'][hash]['original']
+        )
+    else:
+        abort(404)
 
 
 def Run(

@@ -1,9 +1,10 @@
 from src.database.db import Database
 from pathlib import Path
 from src.media.metadataExtract import MetaExtract
-from os import fspath, sep, getcwd
+from os import fspath, getcwd
 from src.utils.filehash import SHA1
 from os.path import join as pathJoin
+from os.path import basename
 from src.media.thumbnails import ImgThumbnail
 from src.media.mediatype import MediaType, GetMediaType
 from src.utils.paths import CreatePath
@@ -73,16 +74,24 @@ def main():
         CreatePath(config["paths"]["data"])
         db = Database(pathJoin(config["paths"]["data"], "gallery.db"))
 
-        imgs = []
+        imgs = {
+            'info': [],
+            'path': {}
+        }
         for row in db.getImages():
             # hash, path, date, size, ratio, width, height, maker, model
             fname = f'{row[0][4:]}-{config["media"]["thumbnail_size"][0]}.jpg'
             fpath = pathJoin(row[0][:2], row[0][2:4], fname)
-            imgs.append({
-                'filename': fname,
-                'path': f'/images/{fpath.replace(sep, "/")}',
+
+            imgs['info'].append({
+                'hash': row[0],
+                'name': basename(row[1]),
                 'aspectRatio': row[4]
             })
+            imgs['path'][row[0]] = {
+                'thumbnail': fpath,
+                'original': row[1]
+            }
 
         thumbnailsFolder = pathJoin(config["paths"]["data"], "thumbnails")
         # Set to absolute path if is relative

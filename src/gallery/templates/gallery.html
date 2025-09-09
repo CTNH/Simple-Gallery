@@ -193,17 +193,17 @@
 
                 row.forEach(img => {
                     const imgElement = document.createElement('img');
-                    imgElement.src = img.path;
+                    imgElement.src = '/image/' + img.hash;
                     imgElement.className = 'gallery-image';
                     imgElement.style.width = img.width + 'px';
                     imgElement.style.height = img.height + 'px';
-                    imgElement.alt = img.filename;
-                    imgElement.title = img.filename;
+                    imgElement.alt = img.name;
+                    imgElement.title = img.name;
 					imgElement.loading = 'lazy';
 
                     // Add click handler for full size view
                     imgElement.addEventListener('click', () => {
-                        window.open(img.path, '_blank');
+                        window.open('/originalimage/'+img.hash, '_blank');
                     });
 
                     rowDiv.appendChild(imgElement);
