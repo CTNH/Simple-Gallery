@@ -5,7 +5,7 @@ from os import fspath, getcwd
 from src.utils.filehash import SHA1
 from os.path import join as pathJoin
 from os.path import basename
-from src.media.thumbnails import ImgThumbnail
+from src.media.thumbnails import ImgThumbnail, VidThumbnail
 from src.media.mediatype import MediaType, GetMediaType
 from src.utils.paths import CreatePath
 import tomllib
@@ -32,13 +32,13 @@ def initialize(config: dict):
         if metadata is None:
             continue
 
-        print(f"Processing {fpath}")
+        # print(f"Processing {fpath}")
         metadata['hash'] = HASH_METHOD(mediaPath)
         metadata['path'] = mediaPath
         metadata['ratio'] = metadata['width'] / metadata['height']
-
+        print("Generating thumbnail")
         for tSize in THUMBNAIL_SIZES:
-            imgThumbnailPath = pathJoin(
+            thumbnailPath = pathJoin(
                 THUMBNAIL_PATH,
                 metadata['hash'][:2],
                 metadata['hash'][2:4],
@@ -47,9 +47,9 @@ def initialize(config: dict):
 
             mtype = GetMediaType(mediaPath)
             if mtype is MediaType.IMAGE:
-                ImgThumbnail(mediaPath, imgThumbnailPath, (tSize, tSize))
+                ImgThumbnail(mediaPath, thumbnailPath, (tSize, tSize))
             elif mtype is MediaType.VIDEO:
-                pass
+                VidThumbnail(mediaPath, thumbnailPath, tSize)
 
         db.addImage(metadata)
 
