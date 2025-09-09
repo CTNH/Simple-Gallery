@@ -8,14 +8,14 @@ import ffmpeg
 register_heif_opener()
 
 
-def ImgThumbnail(imgPath: str, thumbnailPath: str, size: tuple[int, int]):
+def ImgThumbnail(imgPath: str, thumbnailPath: str, size: int):
     # Copy of original to prevent modification
     img = Image.open(imgPath).copy()
     w, h = img.width, img.height
     if w < h:
-        size = int((h / w) * size[0])
+        size = int((h / w) * size)
     else:
-        size = int((w / h) * size[0])
+        size = int((w / h) * size)
     img.thumbnail((size, size))
 
     CreatePath(thumbnailPath)

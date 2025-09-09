@@ -14,6 +14,13 @@ from src.database import schema
 from collections import defaultdict
 
 
+def thumbnailPath(hash: str, size: int) -> (str, str):
+    return (
+        f'{hash[:2]}/{hash[2:4]}/',
+        f'{hash[4:]}-{size}.jpg'
+    )
+
+
 def initialize(config: dict):
     MEDIA_PATH = config["paths"]["media"]
     DATA_PATH = config["paths"]["data"]
@@ -38,26 +45,25 @@ def initialize(config: dict):
         if metadata is None:
             continue
 
-        metadata['hash'] = HASH_METHOD(mediaPath)
+        hash = HASH_METHOD(mediaPath)
+        metadata['hash'] = hash
         metadata['path'] = mediaPath
         metadata['ratio'] = metadata['width'] / metadata['height']
 
-        thumbnailPath = pathJoin(
-            THUMBNAIL_PATH,
-            metadata['hash'][:2],
-            metadata['hash'][2:4],
-            metadata['hash'][4:]
-        )
-
         print("Generating thumbnail")
         for tSize in THUMBNAIL_SIZES:
-            thumbnailSuffix = f"-{tSize}.jpg"
-
-            mtype = GetMediaType(mediaPath)
-            if mtype is MediaType.IMAGE:
-                ImgThumbnail(mediaPath, thumbnailPath+thumbnailSuffix, (tSize, tSize))
-            elif mtype is MediaType.VIDEO:
-                VidThumbnail(mediaPath, thumbnailPath+thumbnailSuffix, tSize)
+            {
+                MediaType.IMAGE: ImgThumbnail,
+                MediaType.VIDEO: VidThumbnail
+            }[GetMediaType(mediaPath)](
+                # Arguments to thumbnailer
+                mediaPath,
+                pathJoin(
+                    THUMBNAIL_PATH,
+                    ''.join(thumbnailPath(hash, tSize))
+                ),
+                tSize
+            )
 
         for statement in schema.INSERT_IMAGES:
             db.exec(statement, defaultdict(lambda: None, metadata))
@@ -87,21 +93,19 @@ def main():
             'info': [],
             'path': {}
         }
-        for row in db.exec(schema.GET_IMAGES):
-            fname = f'{row['hash'][4:]}-{config["media"]["thumbnail_size"][0]}.jpg'
-            fpath = pathJoin(row['hash'][:2], row['hash'][2:4], fname)
-
-            imgInfo = {
+        for row in db.exec(schema.GET_MEDIA_LIST):
+            imgs['info'].append({
                 'hash': row['hash'],
                 'name': basename(row['path']),
                 'aspectRatio': row['ratio'],
-                'video': row['video']
-            }
-            if imgInfo['video'] == 1:
-                imgInfo['duration'] = row['duration']
-            imgs['info'].append(imgInfo)
+                'video': row['video'],
+                'duration': row['duration']
+            })
             imgs['path'][row['hash']] = {
-                'thumbnail': fpath,
+                'thumbnail': ''.join(thumbnailPath(
+                    row['hash'],
+                    min(config["media"]["thumbnail_size"])
+                )),
                 'original': row['path']
             }
 

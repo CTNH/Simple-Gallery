@@ -41,12 +41,10 @@ INSERT_IMAGES = [
     """
 ]
 
-GET_IMAGES = f"""
+GET_MEDIA_LIST = f"""
     SELECT
-        i.hash, p.path,
-        i.date,
-        i.size,
-        i.ratio, i.width, i.height,
+        p.path, i.hash,
+        i.ratio,
         i.video, i.duration
     FROM {MEDIA_PATH_TABLE} p JOIN {MEDIA_TABLE} i ON p.hash = i.hash
     ORDER BY p.path;
