@@ -22,6 +22,7 @@ def initialize(config: dict):
     HASH_METHOD = SHA1
     CreatePath(DATA_PATH)
     db = Database(pathJoin(DATA_PATH, DATABASE_NAME))
+    db.createTables()
     COMMIT_BATCH_SIZE = config["database"]["commit_batch_size"]
     batchSize = 0
     # Recursively list all files
@@ -79,22 +80,21 @@ def main():
             'path': {}
         }
         for row in db.getImages():
-            # hash, path, date, size, ratio, width, height, video, duration
-            fname = f'{row[0][4:]}-{config["media"]["thumbnail_size"][0]}.jpg'
-            fpath = pathJoin(row[0][:2], row[0][2:4], fname)
+            fname = f'{row['hash'][4:]}-{config["media"]["thumbnail_size"][0]}.jpg'
+            fpath = pathJoin(row['hash'][:2], row['hash'][2:4], fname)
 
             imgInfo = {
-                'hash': row[0],
-                'name': basename(row[1]),
-                'aspectRatio': row[4],
-                'video': row[7]
+                'hash': row['hash'],
+                'name': basename(row['path']),
+                'aspectRatio': row['ratio'],
+                'video': row['video']
             }
             if imgInfo['video'] == 1:
-                imgInfo['duration'] = row[8]
+                imgInfo['duration'] = row['duration']
             imgs['info'].append(imgInfo)
-            imgs['path'][row[0]] = {
+            imgs['path'][row['hash']] = {
                 'thumbnail': fpath,
-                'original': row[1]
+                'original': row['path']
             }
 
         thumbnailsFolder = pathJoin(config["paths"]["data"], "thumbnails")
