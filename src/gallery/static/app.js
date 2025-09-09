@@ -122,9 +122,22 @@ function renderGallery() {
 			if (img.video === 1 && img.duration) {
 				const durationDiv = document.createElement('div');
 				durationDiv.className = 'video-duration';
-				durationDiv.textContent = img.duration;
+
+				const playIcon = document.createElement('span');
+				playIcon.className = 'play-icon';
+				// Use a simple SVG play icon
+				playIcon.innerHTML = `
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 18" fill="white" width="12" height="12">
+						<path d="M8 5v14l11-7z"/>
+					</svg>
+				`;
+
+				durationDiv.appendChild(playIcon);
+				durationDiv.appendChild(document.createTextNode(img.duration));
+
 				container.appendChild(durationDiv);
 			}
+
 
 			rowDiv.appendChild(container);
 		});
