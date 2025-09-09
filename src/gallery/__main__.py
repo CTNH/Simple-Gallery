@@ -1,17 +1,18 @@
-from src.database.db import Database
 from pathlib import Path
-from src.media.metadataExtract import MetaExtract
 from os import fspath, getcwd
-from src.utils.filehash import SHA1
 from os.path import join as pathJoin
-from os.path import basename
+from os.path import basename, exists
+from src.database import schema
+from src.database.db import Database
+from src.media.metadataExtract import MetaExtract
 from src.media.thumbnails import ImgThumbnail, VidThumbnail
 from src.media.mediatype import MediaType, GetMediaType
+from src.utils.filehash import SHA1
 from src.utils.paths import CreatePath
-import tomllib
 from .app import Run
-from src.database import schema
+import tomllib
 from collections import defaultdict
+import argparse
 
 
 def thumbnailPath(hash: str, size: int) -> (str, str):
@@ -77,47 +78,69 @@ def initialize(config: dict):
     db.commit()
 
 
+def server(config: dict):
+    CreatePath(config["paths"]["data"])
+    db = Database(pathJoin(config["paths"]["data"], "gallery.db"))
+
+    imgs = {
+        'info': [],
+        'path': {}
+    }
+    for row in db.exec(schema.GET_MEDIA_LIST):
+        imgs['info'].append({
+            'hash': row['hash'],
+            'name': basename(row['path']),
+            'aspectRatio': row['ratio'],
+            'video': row['video'],
+            'duration': row['duration']
+        })
+        imgs['path'][row['hash']] = {
+            'thumbnail': ''.join(thumbnailPath(
+                row['hash'],
+                min(config["media"]["thumbnail_size"])
+            )),
+            'original': row['path']
+        }
+
+    thumbnailsFolder = pathJoin(config["paths"]["data"], "thumbnails")
+    # Set to absolute path if is relative
+    if not thumbnailsFolder.startswith('/'):
+        thumbnailsFolder = pathJoin(getcwd(), thumbnailsFolder)
+
+    Run(
+        config['server']['host'], config['server']['port'],
+        thumbnailsFolder, imgs
+    )
+
+
 # Entry point
 def main():
+    parser = argparse.ArgumentParser(description="Simple Gallery")
+    parser.add_argument(
+        "-c", "--config",
+        type=str, default="config/config.toml",
+        help="Location of config file"
+    )
+    parser.add_argument(
+        "-i", "--init",
+        action="store_true",
+        help="Run in init mode"
+    )
+    args = parser.parse_args()
+
+    if not exists(args.config):
+        print(f"Config file '{args.config}' not found!")
+        return
+
     with open("config/config.toml", "rb") as f:
         config = tomllib.load(f)
 
-    init = False
-    if init:
+    if args.init:
+        print("Running initialization.")
         initialize(config)
-    else:
-        CreatePath(config["paths"]["data"])
-        db = Database(pathJoin(config["paths"]["data"], "gallery.db"))
+        return
 
-        imgs = {
-            'info': [],
-            'path': {}
-        }
-        for row in db.exec(schema.GET_MEDIA_LIST):
-            imgs['info'].append({
-                'hash': row['hash'],
-                'name': basename(row['path']),
-                'aspectRatio': row['ratio'],
-                'video': row['video'],
-                'duration': row['duration']
-            })
-            imgs['path'][row['hash']] = {
-                'thumbnail': ''.join(thumbnailPath(
-                    row['hash'],
-                    min(config["media"]["thumbnail_size"])
-                )),
-                'original': row['path']
-            }
-
-        thumbnailsFolder = pathJoin(config["paths"]["data"], "thumbnails")
-        # Set to absolute path if is relative
-        if not thumbnailsFolder.startswith('/'):
-            thumbnailsFolder = pathJoin(getcwd(), thumbnailsFolder)
-
-        Run(
-            config['server']['host'], config['server']['port'],
-            thumbnailsFolder, imgs
-        )
+    server(config)
 
 
 if __name__ == "__main__":
