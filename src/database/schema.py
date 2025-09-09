@@ -9,9 +9,7 @@ CREATE_TABLES = [
             size INTEGER NOT NULL,
             width INTEGER NOT NULL,
             height INTEGER NOT NULL,
-            ratio REAL NOT NULL,
-            maker TEXT,
-            model TEXT
+            ratio REAL NOT NULL
         );
     """,
     f"""
@@ -23,14 +21,15 @@ CREATE_TABLES = [
     """
 ]
 
+# maker TEXT, model TEXT
+# :Make, :Model
 INSERT_IMAGES = [
     f"""
         INSERT INTO {IMG_TABLE} VALUES (
             :hash,
             :DateTime,
             :size,
-            :width, :height, :ratio,
-            :Make, :Model
+            :width, :height, :ratio
         )
     """,
     f"""
@@ -41,7 +40,8 @@ INSERT_IMAGES = [
     """
 ]
 
+# SELECT i.hash, p.path, i.date, i.size, i.ratio, i.width, i.height, i.maker, i.model
 GET_IMAGES = f"""
-    SELECT i.hash, p.path, i.date, i.size, i.ratio, i.width, i.height, i.maker, i.model
+    SELECT i.hash, p.path, i.date, i.size, i.ratio, i.width, i.height
     FROM {IMGPATH_TABLE} p JOIN {IMG_TABLE} i ON p.hash = i.hash;
 """
