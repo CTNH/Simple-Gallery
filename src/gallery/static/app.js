@@ -74,7 +74,7 @@ function calculateRows(viewWidth, imgList) {
 			const imgw = (imgList[i].aspectRatio / currTotalRatio) * viewWidth;
 			rowImages.push({
 				...imgList[i],
-				width: Math.max(50, imgw - 4), // Account for margin, min width
+				width: Math.max(50, imgw - 8), // Account for margin, min width
 				height: imgh
 			});
 		}
@@ -87,7 +87,7 @@ function calculateRows(viewWidth, imgList) {
 }
 
 function renderGallery() {
-	const viewWidth = window.innerWidth - 20; // Account for padding
+	const viewWidth = window.innerWidth - 16; // Account for padding
 	const rows = calculateRows(viewWidth, allImages);
 
 	galleryContainer.innerHTML = '';
@@ -127,7 +127,7 @@ function handleResize() {
 		if (allImages.length > 0) {
 			renderGallery();
 		}
-	}, 150);
+	}, 350);
 }
 
 // Event listeners
