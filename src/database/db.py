@@ -1,6 +1,4 @@
 import sqlite3
-from src.database import schema
-from collections import defaultdict
 
 
 def dictFactory(cursor, row):
@@ -21,27 +19,15 @@ class Database:
         print("Closing database connection")
         self.conn.close()
 
-    def createTables(self):
-        for statement in schema.CREATE_TABLES:
-            try:
-                self.curs.execute(statement)
-            except Exception:
-                print(f"Database create table failed: {statement}")
-
-    def addImage(self, metadata: dict):
-        for statement in schema.INSERT_IMAGES:
-            try:
-                self.curs.execute(
-                    statement,
-                    # Default to None if no key
-                    defaultdict(lambda: None, metadata)
-                )
-            except Exception:
-                print(f"INSERT FAILED: {metadata['path']}")
-
     def commit(self):
         self.conn.commit()
 
-    def getImages(self) -> tuple:
-        self.curs.execute(schema.GET_IMAGES)
-        return self.curs.fetchall()
+    def exec(self, statement: str, param: dict = None) -> dict:
+        try:
+            if param is None:
+                self.curs.execute(statement)
+            else:
+                self.curs.execute(statement, param)
+            return self.curs.fetchall()
+        except Exception:
+            print(f"Failed to execute: {statement}")

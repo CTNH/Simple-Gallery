@@ -10,6 +10,8 @@ from src.media.mediatype import MediaType, GetMediaType
 from src.utils.paths import CreatePath
 import tomllib
 from .app import Run
+from src.database import schema
+from collections import defaultdict
 
 
 def initialize(config: dict):
@@ -20,11 +22,14 @@ def initialize(config: dict):
     THUMBNAIL_SIZES = config["media"]["thumbnail_size"]
 
     HASH_METHOD = SHA1
+
     CreatePath(DATA_PATH)
     db = Database(pathJoin(DATA_PATH, DATABASE_NAME))
-    db.createTables()
+    for statement in schema.CREATE_TABLES:
+        db.exec(statement)
     COMMIT_BATCH_SIZE = config["database"]["commit_batch_size"]
     batchSize = 0
+
     # Recursively list all files
     for fpath in list(Path(MEDIA_PATH).rglob('*')):
         mediaPath = fspath(fpath)
@@ -33,26 +38,29 @@ def initialize(config: dict):
         if metadata is None:
             continue
 
-        # print(f"Processing {fpath}")
         metadata['hash'] = HASH_METHOD(mediaPath)
         metadata['path'] = mediaPath
         metadata['ratio'] = metadata['width'] / metadata['height']
+
+        thumbnailPath = pathJoin(
+            THUMBNAIL_PATH,
+            metadata['hash'][:2],
+            metadata['hash'][2:4],
+            metadata['hash'][4:]
+        )
+
         print("Generating thumbnail")
         for tSize in THUMBNAIL_SIZES:
-            thumbnailPath = pathJoin(
-                THUMBNAIL_PATH,
-                metadata['hash'][:2],
-                metadata['hash'][2:4],
-                metadata['hash'][4:] + f"-{tSize}.jpg"
-            )
+            thumbnailSuffix = f"-{tSize}.jpg"
 
             mtype = GetMediaType(mediaPath)
             if mtype is MediaType.IMAGE:
-                ImgThumbnail(mediaPath, thumbnailPath, (tSize, tSize))
+                ImgThumbnail(mediaPath, thumbnailPath+thumbnailSuffix, (tSize, tSize))
             elif mtype is MediaType.VIDEO:
-                VidThumbnail(mediaPath, thumbnailPath, tSize)
+                VidThumbnail(mediaPath, thumbnailPath+thumbnailSuffix, tSize)
 
-        db.addImage(metadata)
+        for statement in schema.INSERT_IMAGES:
+            db.exec(statement, defaultdict(lambda: None, metadata))
 
         batchSize += 1
         # Write changes to disk in batch
@@ -79,7 +87,7 @@ def main():
             'info': [],
             'path': {}
         }
-        for row in db.getImages():
+        for row in db.exec(schema.GET_IMAGES):
             fname = f'{row['hash'][4:]}-{config["media"]["thumbnail_size"][0]}.jpg'
             fpath = pathJoin(row['hash'][:2], row['hash'][2:4], fname)
 

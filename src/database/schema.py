@@ -1,9 +1,9 @@
-IMG_TABLE = "images"
-IMGPATH_TABLE = "images_path"
+MEDIA_TABLE = "media"
+MEDIA_PATH_TABLE = "media_path"
 
 CREATE_TABLES = [
     f"""
-        CREATE TABLE IF NOT EXISTS {IMG_TABLE} (
+        CREATE TABLE IF NOT EXISTS {MEDIA_TABLE} (
             hash TEXT PRIMARY KEY,
             date INTEGER,
             size INTEGER NOT NULL,
@@ -15,17 +15,17 @@ CREATE_TABLES = [
         );
     """,
     f"""
-        CREATE TABLE IF NOT EXISTS {IMGPATH_TABLE} (
+        CREATE TABLE IF NOT EXISTS {MEDIA_PATH_TABLE} (
             path TEXT PRIMARY KEY,
             hash TEXT NOT NULL,
-            FOREIGN KEY (hash) REFERENCES {IMG_TABLE}(hash)
+            FOREIGN KEY (hash) REFERENCES {MEDIA_TABLE}(hash)
         );
     """
 ]
 
 INSERT_IMAGES = [
     f"""
-        INSERT INTO {IMG_TABLE} VALUES (
+        INSERT INTO {MEDIA_TABLE} VALUES (
             :hash,
             :DateTime,
             :size,
@@ -34,7 +34,7 @@ INSERT_IMAGES = [
         )
     """,
     f"""
-        INSERT INTO {IMGPATH_TABLE} VALUES (
+        INSERT INTO {MEDIA_PATH_TABLE} VALUES (
             :path,
             :hash
         )
@@ -42,6 +42,12 @@ INSERT_IMAGES = [
 ]
 
 GET_IMAGES = f"""
-    SELECT i.hash, p.path, i.date, i.size, i.ratio, i.width, i.height, i.video, i.duration
-    FROM {IMGPATH_TABLE} p JOIN {IMG_TABLE} i ON p.hash = i.hash;
+    SELECT
+        i.hash, p.path,
+        i.date,
+        i.size,
+        i.ratio, i.width, i.height,
+        i.video, i.duration
+    FROM {MEDIA_PATH_TABLE} p JOIN {MEDIA_TABLE} i ON p.hash = i.hash
+    ORDER BY p.path;
 """
