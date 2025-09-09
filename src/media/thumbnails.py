@@ -1,5 +1,10 @@
 from PIL import Image
+from pillow_heif import register_heif_opener
 from src.utils.paths import CreatePath
+
+
+# Support for HEIF formats
+register_heif_opener()
 
 
 def ImgThumbnail(imgPath: str, thumbnailPath: str, size: tuple[int, int]):
