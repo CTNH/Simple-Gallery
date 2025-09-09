@@ -97,23 +97,37 @@ function renderGallery() {
 		rowDiv.className = 'gallery-row';
 
 		row.forEach(img => {
+			const container = document.createElement('div');
+			container.className = 'gallery-image-container';
+			container.style.width = img.width + 'px';
+			container.style.height = img.height + 'px';
+			container.style.position = 'relative';
+
 			const imgElement = document.createElement('img');
 			imgElement.src = '/image/' + img.hash;
 			imgElement.className = 'gallery-image';
-			imgElement.style.width = img.width + 'px';
-			imgElement.style.height = img.height + 'px';
+			imgElement.style.width = '100%';
+			imgElement.style.height = '100%';
 			imgElement.alt = img.name;
 			imgElement.title = img.name;
 			imgElement.loading = 'lazy';
 
 			// Add click handler for full size view
 			imgElement.addEventListener('click', () => {
-				window.open('/originalimage/'+img.hash, '_blank');
+				window.open('/originalimage/' + img.hash, '_blank');
 			});
 
-			rowDiv.appendChild(imgElement);
-		});
+			container.appendChild(imgElement);
 
+			if (img.video === 1 && img.duration) {
+				const durationDiv = document.createElement('div');
+				durationDiv.className = 'video-duration';
+				durationDiv.textContent = img.duration;
+				container.appendChild(durationDiv);
+			}
+
+			rowDiv.appendChild(container);
+		});
 		galleryContainer.appendChild(rowDiv);
 	});
 }

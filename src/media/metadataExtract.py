@@ -67,11 +67,13 @@ def MetaExtract(fpath: str) -> dict:
             if not vidStreamMeta:
                 return None
 
+            vidDuration = int(float(vidStreamMeta['duration']))
             out = {
                 'width': vidStreamMeta['width'],
                 'height': vidStreamMeta['height'],
                 'size': getsize(fpath),
-                'video': 1
+                'video': 1,
+                'duration': f"{(vidDuration//60):02d}:{(vidDuration%60):02d}"
             }
             # Swap width and height if portrait
             rotation = 0

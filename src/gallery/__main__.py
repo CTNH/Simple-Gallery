@@ -79,15 +79,19 @@ def main():
             'path': {}
         }
         for row in db.getImages():
-            # hash, path, date, size, ratio, width, height, maker, model
+            # hash, path, date, size, ratio, width, height, video, duration
             fname = f'{row[0][4:]}-{config["media"]["thumbnail_size"][0]}.jpg'
             fpath = pathJoin(row[0][:2], row[0][2:4], fname)
 
-            imgs['info'].append({
+            imgInfo = {
                 'hash': row[0],
                 'name': basename(row[1]),
-                'aspectRatio': row[4]
-            })
+                'aspectRatio': row[4],
+                'video': row[7]
+            }
+            if imgInfo['video'] == 1:
+                imgInfo['duration'] = row[8]
+            imgs['info'].append(imgInfo)
             imgs['path'][row[0]] = {
                 'thumbnail': fpath,
                 'original': row[1]
