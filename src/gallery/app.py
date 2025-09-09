@@ -4,7 +4,6 @@ app = Flask(__name__)
 
 # Configuration
 IMAGES_FOLDER = './images/'  # Change this to your image folder path
-ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}
 IMAGES = []
 
 
@@ -22,8 +21,6 @@ def serve_static(filename):
 @app.route('/api/images')
 def get_images():
     """API endpoint to get all images with their aspect ratios"""
-    # images = scan_images()
-    # return jsonify(images)
     return jsonify(IMAGES['info'])
 
 
@@ -60,9 +57,6 @@ def Run(
 
     print("Starting Gallery Webserver")
     print("=" * 50)
-    print(f"Media folder: {IMAGES_FOLDER}")
-    print("Supported formats: JPG, JPEG, PNG, GIF, BMP, WEBP")
-    print("\nStarting server...")
 
     app.run(debug=True, host=host, port=port)
 

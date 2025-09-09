@@ -28,6 +28,8 @@ class Database:
                 self.curs.execute(statement)
             else:
                 self.curs.execute(statement, param)
-            return self.curs.fetchall()
-        except Exception:
+            res = self.curs.fetchall()
+            return {} if res == [] else res
+        except Exception as e:
             print(f"Failed to execute: {statement}")
+            return {'DB_EXEC_ERR': e}

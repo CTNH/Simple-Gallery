@@ -34,9 +34,13 @@ def initialize(config: dict):
     CreatePath(DATA_PATH)
     db = Database(pathJoin(DATA_PATH, DATABASE_NAME))
     for statement in schema.CREATE_TABLES:
-        db.exec(statement)
+        if (e := db.exec(statement).get('DB_EXEC_ERR')):
+            print(f"Error creating tables: {e}")
+            return
+
     COMMIT_BATCH_SIZE = config["database"]["commit_batch_size"]
     batchSize = 0
+    failedInserts, inserts = 0, 0
 
     # Recursively list all files
     for fpath in list(Path(MEDIA_PATH).rglob('*')):
@@ -67,7 +71,13 @@ def initialize(config: dict):
             )
 
         for statement in schema.INSERT_IMAGES:
-            db.exec(statement, defaultdict(lambda: None, metadata))
+            if (
+                db.exec(statement, defaultdict(lambda: None, metadata))
+                .get('DB_EXEC_ERR')
+            ):
+                failedInserts += 1
+            else:
+                inserts += 1
 
         batchSize += 1
         # Write changes to disk in batch
@@ -76,6 +86,8 @@ def initialize(config: dict):
             batchSize = 0
     # Last batch
     db.commit()
+
+    print(f"{inserts} inserts, {failedInserts} failed.")
 
 
 def server(config: dict):
