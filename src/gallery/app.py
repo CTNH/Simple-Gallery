@@ -14,6 +14,11 @@ def index():
     return render_template('gallery.html')
 
 
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory("static", filename)
+
+
 @app.route('/api/images')
 def get_images():
     """API endpoint to get all images with their aspect ratios"""
