@@ -37,7 +37,11 @@ def MetaExtract(fpath: str) -> dict:
         with open(fpath, 'rb') as f:
             tags = exifread.process_file(f, details=False)
             for tag in tags:
-                exifdata[tag.split(" ")[1]] = tags[tag]
+                stag = tag.split(" ")
+                if len(stag) > 1:
+                    exifdata[stag[1]] = tags[tag]
+                else:
+                    exifdata[tag] = tags[tag]
 
         fileTime = min(getctime(fpath), getmtime(fpath))
         imgDatetime = exifdata.get(0x0132)

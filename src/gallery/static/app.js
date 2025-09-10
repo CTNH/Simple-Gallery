@@ -114,14 +114,14 @@ function openLightbox(idx) {
 	const lightboxImg = document.getElementById('lightbox-img');
 	const lightboxVid = document.getElementById('lightbox-vid');
 	if (allImages[idx].video === 0) {
-		lightboxImg.src = `/originalimage/${allImages[idx].hash}`;
+		lightboxImg.src = `/files/${allImages[idx].hash}/original`;
 		lightboxImg.alt = allImages[idx].name;
 
 		lightboxImg.classList.add('active');
 		lightboxVid.classList.remove('active');
 	}
 	else {
-		lightboxVid.src = `/originalimage/${allImages[idx].hash}`;
+		lightboxVid.src = `/files/${allImages[idx].hash}/original`;
 
 		lightboxVid.classList.add('active');
 		lightboxImg.classList.remove('active');
@@ -165,7 +165,7 @@ function renderGallery() {
 
 			const imgElement = document.createElement('img');
 			// Use data-src for lazy loading, no initial src to prevent eager loading
-			imgElement.dataset.src = '/image/' + img.hash;
+			imgElement.dataset.src = '/files/' + img.hash + "/thumbnail";
 			imgElement.className = 'gallery-image';
 			imgElement.style.width = '100%';
 			imgElement.style.height = '100%';

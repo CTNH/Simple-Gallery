@@ -37,7 +37,7 @@ def cachedResp(resp: Response) -> Response:
     return resp
 
 
-@app.route('/image/<path:hash>')
+@app.route('/files/<hash>/thumbnail')
 def serve_image(hash):
     if hash in IMAGES['path']:
         return cachedResp(send_from_directory(
@@ -48,7 +48,7 @@ def serve_image(hash):
         abort(404)
 
 
-@app.route('/originalimage/<path:hash>')
+@app.route('/files/<hash>/original')
 def serve_originalImage(hash):
     if hash in IMAGES['path']:
         return cachedResp(send_file(
