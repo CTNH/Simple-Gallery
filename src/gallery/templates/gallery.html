@@ -9,13 +9,22 @@
 <body>
     <div class="header">
         <h1>Gallery</h1>
-        <p>Responsive layout that adapts to window size</p>
     </div>
 
     <div class="stats" id="stats"></div>
 
     <div class="gallery-container" id="gallery">
         <div class="loading">Loading images...</div>
+    </div>
+
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+        <button class="lightbox-nav lightbox-prev" onclick="prevImage()">‹</button>
+        <img id="lightbox-img" src="" alt="">
+        <video id="lightbox-vid" controls>
+			<source src=""/>
+		</video>
+        <button class="lightbox-nav lightbox-next" onclick="nextImage()">›</button>
     </div>
 
     <script src="/static/app.js"></script>

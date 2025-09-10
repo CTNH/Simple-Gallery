@@ -2,6 +2,7 @@ let allImages = [];
 let galleryContainer = document.getElementById('gallery');
 let statsElement = document.getElementById('stats');
 let observer;
+let currentImageIndex = 0;
 
 // Fetch images from API
 async function loadImages() {
@@ -96,7 +97,8 @@ function calculateRows(viewWidth, imgList) {
 			rowImages.push({
 				...imgList[i],
 				width: Math.max(50, imgw - 8), // Account for margin, min width
-				height: imgh
+				height: imgh,
+				idx: i
 			});
 		}
 
@@ -106,6 +108,41 @@ function calculateRows(viewWidth, imgList) {
 
 	return rows;
 }
+
+function openLightbox(idx) {
+	currentImageIndex = idx;
+	const lightboxImg = document.getElementById('lightbox-img');
+	const lightboxVid = document.getElementById('lightbox-vid');
+	if (allImages[idx].video === 0) {
+		lightboxImg.src = `/originalimage/${allImages[idx].hash}`;
+		lightboxImg.alt = allImages[idx].name;
+
+		lightboxImg.classList.add('active');
+		lightboxVid.classList.remove('active');
+	}
+	else {
+		lightboxVid.src = `/originalimage/${allImages[idx].hash}`;
+
+		lightboxVid.classList.add('active');
+		lightboxImg.classList.remove('active');
+	}
+	document.getElementById('lightbox').classList.add('active');
+}
+
+function closeLightbox() {
+	document.getElementById('lightbox').classList.remove('active');
+}
+
+function nextImage() {
+	currentImageIndex = (currentImageIndex + 1) % allImages.length;
+	openLightbox(currentImageIndex);
+}
+
+function prevImage() {
+	currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
+	openLightbox(currentImageIndex);
+}
+
 
 function renderGallery() {
 	const viewWidth = window.innerWidth - 16; // Account for padding
@@ -136,10 +173,7 @@ function renderGallery() {
 			imgElement.title = img.name;
 			imgElement.loading = 'lazy'; // Works as fallback
 
-			// Add click handler for full size view
-			imgElement.addEventListener('click', () => {
-				window.open('/originalimage/' + img.hash);
-			});
+			imgElement.addEventListener('click', () => openLightbox(img.idx));
 
 			container.appendChild(imgElement);
 
@@ -183,6 +217,29 @@ function handleResize() {
 		}
 	}, 350);
 }
+
+// Close lightbox by clicking outside the image
+document.getElementById('lightbox').addEventListener('click', (e) => {
+	if (e.target.id === 'lightbox') {
+		closeLightbox();
+	}
+});
+
+document.addEventListener('keydown', (e) => {
+	switch (e.key) {
+		case 'Escape':
+			closeLightbox();
+			break;
+		case 'ArrowRight':
+			nextImage();
+			break;
+		case 'ArrowLeft':
+			prevImage();
+			break;
+		default:
+			break;
+	}
+});
 
 // Event listeners
 window.addEventListener('resize', handleResize);
