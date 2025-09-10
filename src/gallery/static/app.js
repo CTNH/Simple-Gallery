@@ -1,6 +1,7 @@
 let allImages = [];
 let galleryContainer = document.getElementById('gallery');
 let statsElement = document.getElementById('stats');
+let observer;
 
 // Fetch images from API
 async function loadImages() {
@@ -25,6 +26,27 @@ function updateStats() {
 	statsElement.textContent = `${allImages.length} images • Window: ${window.innerWidth}x${window.innerHeight}px`;
 }
 
+// Intersection Observer setup for lazy loading
+function setupObserver() {
+	if (observer) {
+		observer.disconnect();
+	}
+	observer = new IntersectionObserver(
+		(entries) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					const img = entry.target;
+					if (!img.src) {
+						img.src = img.dataset.src;
+						observer.unobserve(img);
+					}
+				}
+			});
+		},
+		{ rootMargin: '200px' }
+	);
+}
+
 // Logic to decide row height and items in row
 function calculateRows(viewWidth, imgList) {
 	// Magic number 200; fix with config
@@ -33,7 +55,6 @@ function calculateRows(viewWidth, imgList) {
 	let lastImg = 0;
 
 	while (lastImg < imgList.length) {
-		let currRowCnt = 0;
 		let prevRatioDiff = targetRatio;
 		let currTotalRatio = 0;
 		let colInRow = lastImg;
@@ -90,6 +111,8 @@ function renderGallery() {
 	const viewWidth = window.innerWidth - 16; // Account for padding
 	const rows = calculateRows(viewWidth, allImages);
 
+	// Instead of clearing and recreating everything, reuse existing elements if possible
+	// For simplicity here, we clear and re-render container but defer image src loading
 	galleryContainer.innerHTML = '';
 
 	rows.forEach(row => {
@@ -104,17 +127,18 @@ function renderGallery() {
 			container.style.position = 'relative';
 
 			const imgElement = document.createElement('img');
-			imgElement.src = '/image/' + img.hash;
+			// Use data-src for lazy loading, no initial src to prevent eager loading
+			imgElement.dataset.src = '/image/' + img.hash;
 			imgElement.className = 'gallery-image';
 			imgElement.style.width = '100%';
 			imgElement.style.height = '100%';
 			imgElement.alt = img.name;
 			imgElement.title = img.name;
-			imgElement.loading = 'lazy';
+			imgElement.loading = 'lazy'; // Works as fallback
 
 			// Add click handler for full size view
 			imgElement.addEventListener('click', () => {
-				window.open('/originalimage/' + img.hash, '_blank');
+				window.open('/originalimage/' + img.hash);
 			});
 
 			container.appendChild(imgElement);
@@ -131,18 +155,21 @@ function renderGallery() {
 						<path d="M8 5v14l11-7z"/>
 					</svg>
 				`;
-
 				durationDiv.appendChild(playIcon);
 				durationDiv.appendChild(document.createTextNode(img.duration));
 
 				container.appendChild(durationDiv);
 			}
 
-
 			rowDiv.appendChild(container);
 		});
 		galleryContainer.appendChild(rowDiv);
 	});
+	// After new elements added, observe their images for lazy loading
+	setupObserver();
+	// Start observing all images
+	const imgs = galleryContainer.querySelectorAll('img.gallery-image');
+	imgs.forEach(img => observer.observe(img));
 }
 
 // Debounced resize handler
