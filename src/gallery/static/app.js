@@ -3,6 +3,7 @@ let galleryContainer = document.getElementById('gallery');
 let statsElement = document.getElementById('stats');
 let observer;
 let currMediaIdx = 0;
+let lastWinWidth = window.innerWidth;
 
 // Fetch images from API
 async function loadMedia() {
@@ -127,11 +128,17 @@ function openLightbox(idx) {
 		lightboxImg.classList.remove('active');
 	}
 	document.getElementById('lightbox').classList.add('active');
+
+	// Prevent Scrolling
+	document.body.style.overflow = 'hidden';
 }
 
 function closeLightbox() {
 	document.getElementById('lightbox-vid').src = "";
 	document.getElementById('lightbox').classList.remove('active');
+
+	// Restore Scrolling
+	document.body.style.overflow = '';
 }
 
 function nextMedia() {
@@ -245,7 +252,14 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Event listeners
-window.addEventListener('resize', handleResize);
+window.addEventListener('resize', () => {
+	// Ignore height resizes
+	let currWidth = window.innerWidth;
+	if (currWidth !== lastWinWidth) {
+		lastWinWidth = currWidth;
+		handleResize();
+	}
+});
 window.addEventListener('load', loadMedia);
 
 // Load images immediately if DOM is already ready
