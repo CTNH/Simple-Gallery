@@ -1,16 +1,16 @@
-let allImages = [];
+let allMedia = [];
 let galleryContainer = document.getElementById('gallery');
 let statsElement = document.getElementById('stats');
 let observer;
-let currentImageIndex = 0;
+let currMediaIdx = 0;
 
 // Fetch images from API
-async function loadImages() {
+async function loadMedia() {
 	try {
-		const response = await fetch('/api/images');
-		allImages = await response.json();
+		const response = await fetch('/api/media');
+		allMedia = await response.json();
 
-		if (allImages.length === 0) {
+		if (allMedia.length === 0) {
 			galleryContainer.innerHTML = '<div class="error">No images found. Please add some images to the static/images folder.</div>';
 			return;
 		}
@@ -24,7 +24,7 @@ async function loadImages() {
 }
 
 function updateStats() {
-	statsElement.textContent = `${allImages.length} images • Window: ${window.innerWidth}x${window.innerHeight}px`;
+	statsElement.textContent = `${allMedia.length} items • Window: ${window.innerWidth}x${window.innerHeight}px`;
 }
 
 // Intersection Observer setup for lazy loading
@@ -36,10 +36,10 @@ function setupObserver() {
 		(entries) => {
 			entries.forEach(entry => {
 				if (entry.isIntersecting) {
-					const img = entry.target;
-					if (!img.src) {
-						img.src = img.dataset.src;
-						observer.unobserve(img);
+					const item = entry.target;
+					if (!item.src) {
+						item.src = item.dataset.src;
+						observer.unobserve(item);
 					}
 				}
 			});
@@ -49,28 +49,28 @@ function setupObserver() {
 }
 
 // Logic to decide row height and items in row
-function calculateRows(viewWidth, imgList) {
+function calculateRows(viewWidth, mediaInfo) {
 	// Magic number 200; fix with config
 	const targetRatio = viewWidth / 200;
 	const rows = [];
 	let lastImg = 0;
 
-	while (lastImg < imgList.length) {
+	while (lastImg < mediaInfo.length) {
 		let prevRatioDiff = targetRatio;
 		let currTotalRatio = 0;
 		let colInRow = lastImg;
 
-		for (let idx = lastImg; idx < imgList.length; idx++) {
-			currTotalRatio += imgList[idx].aspectRatio;
+		for (let idx = lastImg; idx < mediaInfo.length; idx++) {
+			currTotalRatio += mediaInfo[idx].aspectRatio;
 
 			// Current ratio diff > previous
 			if (Math.abs(targetRatio - currTotalRatio) > prevRatioDiff) {
-				currTotalRatio -= imgList[idx].aspectRatio;
+				currTotalRatio -= mediaInfo[idx].aspectRatio;
 
 				// If the single image is very wide
 				// Needed to prevent infinite loop
 				if (idx == lastImg) {
-					currTotalRatio = imgList[idx].aspectRatio;
+					currTotalRatio = mediaInfo[idx].aspectRatio;
 					colInRow = idx + 1;
 				} else {
 					colInRow = idx;
@@ -80,7 +80,7 @@ function calculateRows(viewWidth, imgList) {
 			prevRatioDiff = Math.abs(targetRatio - currTotalRatio);
 
 			// If we've reached the end of images
-			if (idx === imgList.length - 1) {
+			if (idx === mediaInfo.length - 1) {
 				colInRow = idx + 1;
 				break;
 			}
@@ -93,9 +93,9 @@ function calculateRows(viewWidth, imgList) {
 		// Create row data
 		const rowImages = [];
 		for (let i = lastImg; i < colInRow; i++) {
-			const imgw = (imgList[i].aspectRatio / currTotalRatio) * viewWidth;
+			const imgw = (mediaInfo[i].aspectRatio / currTotalRatio) * viewWidth;
 			rowImages.push({
-				...imgList[i],
+				...mediaInfo[i],
 				width: Math.max(50, imgw - 8), // Account for margin, min width
 				height: imgh,
 				idx: i
@@ -110,18 +110,18 @@ function calculateRows(viewWidth, imgList) {
 }
 
 function openLightbox(idx) {
-	currentImageIndex = idx;
+	currMediaIdx = idx;
 	const lightboxImg = document.getElementById('lightbox-img');
 	const lightboxVid = document.getElementById('lightbox-vid');
-	if (allImages[idx].video === 0) {
-		lightboxImg.src = `/files/${allImages[idx].hash}/original`;
-		lightboxImg.alt = allImages[idx].name;
+	if (allMedia[idx].video === 0) {
+		lightboxImg.src = `/files/${allMedia[idx].hash}/original`;
+		lightboxImg.alt = allMedia[idx].name;
 
 		lightboxImg.classList.add('active');
 		lightboxVid.classList.remove('active');
 	}
 	else {
-		lightboxVid.src = `/files/${allImages[idx].hash}/original`;
+		lightboxVid.src = `/files/${allMedia[idx].hash}/original`;
 
 		lightboxVid.classList.add('active');
 		lightboxImg.classList.remove('active');
@@ -130,23 +130,26 @@ function openLightbox(idx) {
 }
 
 function closeLightbox() {
+	document.getElementById('lightbox-vid').src = "";
 	document.getElementById('lightbox').classList.remove('active');
 }
 
-function nextImage() {
-	currentImageIndex = (currentImageIndex + 1) % allImages.length;
-	openLightbox(currentImageIndex);
+function nextMedia() {
+	document.getElementById('lightbox-vid').src = "";
+	currMediaIdx = (currMediaIdx + 1) % allMedia.length;
+	openLightbox(currMediaIdx);
 }
 
-function prevImage() {
-	currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
-	openLightbox(currentImageIndex);
+function prevMedia() {
+	document.getElementById('lightbox-vid').src = "";
+	currMediaIdx = (currMediaIdx - 1 + allMedia.length) % allMedia.length;
+	openLightbox(currMediaIdx);
 }
 
 
 function renderGallery() {
 	const viewWidth = window.innerWidth - 16; // Account for padding
-	const rows = calculateRows(viewWidth, allImages);
+	const rows = calculateRows(viewWidth, allMedia);
 
 	// Instead of clearing and recreating everything, reuse existing elements if possible
 	// For simplicity here, we clear and re-render container but defer image src loading
@@ -158,7 +161,7 @@ function renderGallery() {
 
 		row.forEach(img => {
 			const container = document.createElement('div');
-			container.className = 'gallery-image-container';
+			container.className = 'gallery-media-container';
 			container.style.width = img.width + 'px';
 			container.style.height = img.height + 'px';
 			container.style.position = 'relative';
@@ -166,7 +169,7 @@ function renderGallery() {
 			const imgElement = document.createElement('img');
 			// Use data-src for lazy loading, no initial src to prevent eager loading
 			imgElement.dataset.src = '/files/' + img.hash + "/thumbnail";
-			imgElement.className = 'gallery-image';
+			imgElement.className = 'gallery-media';
 			imgElement.style.width = '100%';
 			imgElement.style.height = '100%';
 			imgElement.alt = img.name;
@@ -202,7 +205,7 @@ function renderGallery() {
 	// After new elements added, observe their images for lazy loading
 	setupObserver();
 	// Start observing all images
-	const imgs = galleryContainer.querySelectorAll('img.gallery-image');
+	const imgs = galleryContainer.querySelectorAll('img.gallery-media');
 	imgs.forEach(img => observer.observe(img));
 }
 
@@ -212,7 +215,7 @@ function handleResize() {
 	clearTimeout(resizeTimeout);
 	resizeTimeout = setTimeout(() => {
 		updateStats();
-		if (allImages.length > 0) {
+		if (allMedia.length > 0) {
 			renderGallery();
 		}
 	}, 350);
@@ -231,10 +234,10 @@ document.addEventListener('keydown', (e) => {
 			closeLightbox();
 			break;
 		case 'ArrowRight':
-			nextImage();
+			nextMedia();
 			break;
 		case 'ArrowLeft':
-			prevImage();
+			prevMedia();
 			break;
 		default:
 			break;
@@ -243,12 +246,12 @@ document.addEventListener('keydown', (e) => {
 
 // Event listeners
 window.addEventListener('resize', handleResize);
-window.addEventListener('load', loadImages);
+window.addEventListener('load', loadMedia);
 
 // Load images immediately if DOM is already ready
 if (document.readyState === 'loading') {
-	document.addEventListener('DOMContentLoaded', loadImages);
+	document.addEventListener('DOMContentLoaded', loadMedia);
 } else {
-	loadImages();
+	loadMedia();
 }
 

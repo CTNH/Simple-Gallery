@@ -4,8 +4,8 @@ from flask import Response, make_response, jsonify
 app = Flask(__name__)
 
 # Configuration
-IMAGES_FOLDER = './images/'  # Change this to your image folder path
-IMAGES = []
+MEDIA_FOLDER = None
+MEDIA = []
 
 
 @app.route('/')
@@ -16,7 +16,6 @@ def index():
 
 @app.errorhandler(404)
 def page_not_found(e):
-    # Render your custom 404.html template and respond with 404 status
     return render_template('404.html'), 404
 
 
@@ -25,10 +24,10 @@ def serve_static(filename):
     return send_from_directory("static", filename)
 
 
-@app.route('/api/images')
-def get_images():
+@app.route('/api/media')
+def get_mediaInfo():
     """API endpoint to get all images with their aspect ratios"""
-    return jsonify(IMAGES['info'])
+    return jsonify(MEDIA['info'])
 
 
 def cachedResp(resp: Response) -> Response:
@@ -38,35 +37,35 @@ def cachedResp(resp: Response) -> Response:
 
 
 @app.route('/files/<hash>/thumbnail')
-def serve_image(hash):
-    if hash in IMAGES['path']:
+def serve_thumbnail(hash):
+    if hash in MEDIA['path']:
         return cachedResp(send_from_directory(
-            IMAGES_FOLDER,
-            IMAGES['path'][hash]['thumbnail']
+            MEDIA_FOLDER,
+            MEDIA['path'][hash]['thumbnail']
         ))
     else:
         abort(404)
 
 
 @app.route('/files/<hash>/original')
-def serve_originalImage(hash):
-    if hash in IMAGES['path']:
+def serve_originalMedia(hash):
+    if hash in MEDIA['path']:
         return cachedResp(send_file(
-            IMAGES['path'][hash]['original']
+            MEDIA['path'][hash]['original']
         ))
     else:
         abort(404)
 
 
 def Run(
+    mediaFolder: str,
+    media: list,
     host: str = '127.0.0.1',
-    port: int = 5000,
-    imagesFolder: str = IMAGES_FOLDER,
-    images: list = IMAGES
+    port: int = 5000
 ):
-    global IMAGES, IMAGES_FOLDER
-    IMAGES_FOLDER = imagesFolder
-    IMAGES = images
+    global MEDIA, MEDIA_FOLDER
+    MEDIA_FOLDER = mediaFolder
+    MEDIA = media
 
     print("Starting Gallery Webserver")
     print("=" * 50)

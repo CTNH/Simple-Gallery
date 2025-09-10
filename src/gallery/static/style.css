@@ -24,7 +24,7 @@ body {
 	width: 100%;
 }
 
-.gallery-image-container {
+.gallery-media-container {
 	display: inline-block;
 	margin-right: 8px;
 }
@@ -46,17 +46,17 @@ body {
 }
 
 
-.gallery-image {
+.gallery-media {
 	cursor: pointer;
 	transition: opacity 0.3s ease;
 	object-fit: cover;
 }
 
-.gallery-image:last-child {
+.gallery-media:last-child {
 	margin-right: 0;
 }
 
-.gallery-image:hover {
+.gallery-media:hover {
 	opacity: 0.8;
 }
 

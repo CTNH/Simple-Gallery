@@ -125,8 +125,8 @@ def server(config: dict):
         thumbnailsFolder = pathJoin(getcwd(), thumbnailsFolder)
 
     Run(
-        config['server']['host'], config['server']['port'],
-        thumbnailsFolder, imgs
+        thumbnailsFolder, imgs,
+        config['server']['host'], config['server']['port']
     )
 
 
