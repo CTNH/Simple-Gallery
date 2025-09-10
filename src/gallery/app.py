@@ -1,4 +1,5 @@
-from flask import Flask, render_template, send_from_directory, jsonify, send_file, abort
+from flask import Flask, render_template, send_from_directory, send_file, abort
+from flask import Response, make_response, jsonify
 
 app = Flask(__name__)
 
@@ -13,6 +14,12 @@ def index():
     return render_template('gallery.html')
 
 
+@app.errorhandler(404)
+def page_not_found(e):
+    # Render your custom 404.html template and respond with 404 status
+    return render_template('404.html'), 404
+
+
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory("static", filename)
@@ -24,13 +31,19 @@ def get_images():
     return jsonify(IMAGES['info'])
 
 
+def cachedResp(resp: Response) -> Response:
+    resp = make_response(resp)
+    resp.headers['Cache-Control'] = 'public, max-age=86400, immutable'
+    return resp
+
+
 @app.route('/image/<path:hash>')
 def serve_image(hash):
     if hash in IMAGES['path']:
-        return send_from_directory(
+        return cachedResp(send_from_directory(
             IMAGES_FOLDER,
             IMAGES['path'][hash]['thumbnail']
-        )
+        ))
     else:
         abort(404)
 
@@ -38,9 +51,9 @@ def serve_image(hash):
 @app.route('/originalimage/<path:hash>')
 def serve_originalImage(hash):
     if hash in IMAGES['path']:
-        return send_file(
+        return cachedResp(send_file(
             IMAGES['path'][hash]['original']
-        )
+        ))
     else:
         abort(404)
 
