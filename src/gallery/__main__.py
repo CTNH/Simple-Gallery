@@ -57,16 +57,21 @@ def initialize(config: dict):
 
         print("Generating thumbnail")
         for tSize in THUMBNAIL_SIZES:
+            tpath = pathJoin(
+                THUMBNAIL_PATH,
+                ''.join(thumbnailPath(hash, tSize))
+            )
+            if exists(tpath):
+                print("Thumbnail exists, skipping...")
+                continue
+
             {
                 MediaType.IMAGE: ImgThumbnail,
                 MediaType.VIDEO: VidThumbnail
             }[GetMediaType(mediaPath)](
                 # Arguments to thumbnailer
                 mediaPath,
-                pathJoin(
-                    THUMBNAIL_PATH,
-                    ''.join(thumbnailPath(hash, tSize))
-                ),
+                tpath,
                 tSize
             )
 
@@ -144,7 +149,7 @@ def main():
         print(f"Config file '{args.config}' not found!")
         return
 
-    with open("config/config.toml", "rb") as f:
+    with open(args.config, "rb") as f:
         config = tomllib.load(f)
 
     if args.init:
