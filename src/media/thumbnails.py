@@ -1,6 +1,6 @@
 from PIL import Image
 from pillow_heif import register_heif_opener
-from src.utils.paths import CreatePath
+from utils.paths import CreatePath
 import ffmpeg
 
 

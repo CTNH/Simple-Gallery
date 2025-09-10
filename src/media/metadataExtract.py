@@ -3,7 +3,7 @@ from pillow_heif import register_heif_opener
 from os.path import getctime, getmtime, getsize
 from datetime import datetime as dt
 import exifread
-from src.media.mediatype import MediaType, GetMediaType
+from media.mediatype import MediaType, GetMediaType
 import ffmpeg
 
 

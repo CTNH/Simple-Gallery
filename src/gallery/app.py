@@ -1,11 +1,13 @@
 from flask import Flask, render_template, send_from_directory, send_file, abort
 from flask import Response, make_response, jsonify
+from os.path import isabs, join as pathJoin
 
 app = Flask(__name__)
 
 # Configuration
 MEDIA_FOLDER = None
 MEDIA = []
+CONFIG_FOLDER = None
 
 
 @app.route('/')
@@ -50,22 +52,27 @@ def serve_thumbnail(hash):
 @app.route('/files/<hash>/original')
 def serve_originalMedia(hash):
     if hash in MEDIA['path']:
-        return cachedResp(send_file(
-            MEDIA['path'][hash]['original']
-        ))
+        original_path = MEDIA['path'][hash]['original']
+        # Path is relative
+        if not isabs(original_path):
+            # Convert to absolute path based on current working directory
+            original_path = pathJoin(CONFIG_FOLDER, original_path)
+        return cachedResp(send_file(original_path))
     else:
         abort(404)
 
 
 def Run(
-    mediaFolder: str,
     media: list,
+    mediaFolder: str,
+    configFolder: str,
     host: str = '127.0.0.1',
     port: int = 5000
 ):
-    global MEDIA, MEDIA_FOLDER
-    MEDIA_FOLDER = mediaFolder
+    global MEDIA, MEDIA_FOLDER, CONFIG_FOLDER
     MEDIA = media
+    CONFIG_FOLDER = configFolder
+    MEDIA_FOLDER = mediaFolder
 
     print("Starting Gallery Webserver")
     print("=" * 50)

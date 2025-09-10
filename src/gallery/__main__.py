@@ -1,15 +1,15 @@
 from pathlib import Path
-from os import fspath, getcwd
+from os import fspath
 from os.path import join as pathJoin
-from os.path import basename, exists
-from src.database import schema
-from src.database.db import Database
-from src.media.metadataExtract import MetaExtract
-from src.media.thumbnails import ImgThumbnail, VidThumbnail
-from src.media.mediatype import MediaType, GetMediaType
-from src.utils.filehash import SHA1
-from src.utils.paths import CreatePath
-from .app import Run
+from os.path import basename, dirname, exists, isabs
+from database import schema
+from database.db import Database
+from media.metadataExtract import MetaExtract
+from media.thumbnails import ImgThumbnail, VidThumbnail
+from media.mediatype import MediaType, GetMediaType
+from utils.filehash import SHA1
+from utils.paths import CreatePath
+from gallery.app import Run
 import tomllib
 from collections import defaultdict
 import argparse
@@ -96,8 +96,16 @@ def initialize(config: dict):
 
 
 def server(config: dict):
-    CreatePath(config["paths"]["data"])
-    db = Database(pathJoin(config["paths"]["data"], "gallery.db"))
+    dbPath = pathJoin(config["paths"]["data"], "gallery.db")
+    # Path is relative
+    if not isabs(dbPath):
+        dbPath = pathJoin(config['config_dir'], dbPath)
+
+    if not exists(dbPath):
+        print(f'Cannot find database file {dbPath}.')
+        return
+
+    db = Database(dbPath)
 
     imgs = {
         'info': [],
@@ -121,11 +129,11 @@ def server(config: dict):
 
     thumbnailsFolder = pathJoin(config["paths"]["data"], "thumbnails")
     # Set to absolute path if is relative
-    if not thumbnailsFolder.startswith('/'):
-        thumbnailsFolder = pathJoin(getcwd(), thumbnailsFolder)
+    if not isabs(thumbnailsFolder):
+        thumbnailsFolder = pathJoin(config['config_dir'], thumbnailsFolder)
 
     Run(
-        thumbnailsFolder, imgs,
+        imgs, thumbnailsFolder, config['config_dir'],
         config['server']['host'], config['server']['port']
     )
 
@@ -151,6 +159,7 @@ def main():
 
     with open(args.config, "rb") as f:
         config = tomllib.load(f)
+    config['config_dir'] = dirname(args.config)
 
     if args.init:
         print("Running initialization.")
