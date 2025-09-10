@@ -24,7 +24,15 @@ def thumbnailPath(hash: str, size: int) -> (str, str):
 
 def initialize(config: dict):
     MEDIA_PATH = config["paths"]["media"]
+    # Path is relative
+    if not isabs(MEDIA_PATH):
+        MEDIA_PATH = pathJoin(config['config_dir'], MEDIA_PATH)
+
     DATA_PATH = config["paths"]["data"]
+    # Path is relative
+    if not isabs(DATA_PATH):
+        DATA_PATH = pathJoin(config['config_dir'], DATA_PATH)
+
     DATABASE_NAME = "gallery.db"
     THUMBNAIL_PATH = pathJoin(DATA_PATH, "thumbnails")
     THUMBNAIL_SIZES = config["media"]["thumbnail_size"]
@@ -102,7 +110,7 @@ def server(config: dict):
         dbPath = pathJoin(config['config_dir'], dbPath)
 
     if not exists(dbPath):
-        print(f'Cannot find database file {dbPath}.')
+        print(f'Cannot find database file "{dbPath}".')
         return
 
     db = Database(dbPath)
