@@ -49,9 +49,9 @@ def MetaExtract(fpath: str) -> dict:
         imgOffsettime = exifdata.get(0x9010, "+0000")
         # No EXIF for datetime
         if imgDatetime is None:
-            data['DateTime'] = fileTime
+            data['datetime'] = fileTime
         else:
-            data["DateTime"] = dt.strptime(
+            data["datetime"] = dt.strptime(
                 f"{imgDatetime} {imgOffsettime}",
                 "%Y:%m:%d %H:%M:%S %z"
             ).timestamp()
@@ -88,12 +88,12 @@ def MetaExtract(fpath: str) -> dict:
                 out['width'], out['height'] = out['height'], out['width']
 
             if 'creation_time' in vidStreamMeta['tags']:
-                out['DateTime'] = dt.strptime(
+                out['datetime'] = dt.strptime(
                     vidStreamMeta['tags']['creation_time'],
                     "%Y-%m-%dT%H:%M:%S.%fZ"
                 ).timestamp()
             else:
-                out['DateTime'] = min(getctime(fpath), getmtime(fpath))
+                out['datetime'] = min(getctime(fpath), getmtime(fpath))
 
             return out
         except ffmpeg.Error as e:

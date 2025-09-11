@@ -9,7 +9,7 @@ CREATE_TABLES = [
             size INTEGER NOT NULL,
             width INTEGER NOT NULL,
             height INTEGER NOT NULL,
-            ratio REAL NOT NULL,
+            aspectratio REAL NOT NULL,
             video INTEGER NOT NULL,
             duration TEXT
         );
@@ -29,7 +29,7 @@ INSERT_IMAGES = [
             :hash,
             :DateTime,
             :size,
-            :width, :height, :ratio,
+            :width, :height, :aspectratio,
             :video, :duration
         )
     """,
@@ -44,7 +44,7 @@ INSERT_IMAGES = [
 GET_MEDIA_LIST = f"""
     SELECT
         p.path, i.hash,
-        i.ratio,
+        i.aspectratio,
         i.video, i.duration
     FROM {MEDIA_PATH_TABLE} p JOIN {MEDIA_TABLE} i ON p.hash = i.hash
     ORDER BY p.path;

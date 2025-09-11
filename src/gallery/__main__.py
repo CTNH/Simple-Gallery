@@ -9,7 +9,7 @@ from media.thumbnails import ImgThumbnail, VidThumbnail
 from media.mediatype import MediaType, GetMediaType
 from utils.filehash import SHA1
 from utils.paths import CreatePath
-from gallery.app import createApp
+from gallery.app import createApp, initDB
 import tomllib
 from collections import defaultdict
 import argparse
@@ -40,16 +40,8 @@ def initialize(config: dict):
     HASH_METHOD = SHA1
 
     CreatePath(DATA_PATH)
-    db = Database(pathJoin(DATA_PATH, DATABASE_NAME))
-    for statement in schema.CREATE_TABLES:
-        if (e := db.exec(statement).get('DB_EXEC_ERR')):
-            print(f"Error creating tables: {e}")
-            return
 
-    COMMIT_BATCH_SIZE = config["database"]["commit_batch_size"]
-    batchSize = 0
-    failedInserts, inserts = 0, 0
-
+    metadataList = []
     # Recursively list all files
     for fpath in list(Path(MEDIA_PATH).rglob('*')):
         mediaPath = fspath(fpath)
@@ -61,7 +53,7 @@ def initialize(config: dict):
         hash = HASH_METHOD(mediaPath)
         metadata['hash'] = hash
         metadata['path'] = mediaPath
-        metadata['ratio'] = metadata['width'] / metadata['height']
+        metadata['aspectratio'] = metadata['width'] / metadata['height']
 
         print("Generating thumbnail")
         for tSize in THUMBNAIL_SIZES:
@@ -83,24 +75,13 @@ def initialize(config: dict):
                 tSize
             )
 
-        for statement in schema.INSERT_IMAGES:
-            if (
-                db.exec(statement, defaultdict(lambda: None, metadata))
-                .get('DB_EXEC_ERR')
-            ):
-                failedInserts += 1
-            else:
-                inserts += 1
+        metadataList.append(defaultdict(lambda: None, metadata))
 
-        batchSize += 1
-        # Write changes to disk in batch
-        if batchSize >= COMMIT_BATCH_SIZE:
-            db.commit()
-            batchSize = 0
-    # Last batch
-    db.commit()
-
-    print(f"{inserts} inserts, {failedInserts} failed.")
+    initDB(
+        pathJoin(DATA_PATH, DATABASE_NAME),
+        metadataList,
+        config["database"]["commit_batch_size"]
+    )
 
 
 def server(config: dict):
@@ -123,7 +104,7 @@ def server(config: dict):
         imgs['info'].append({
             'hash': row['hash'],
             'name': basename(row['path']),
-            'aspectRatio': row['ratio'],
+            'aspectRatio': row['aspectratio'],
             'video': row['video'],
             'duration': row['duration']
         })
@@ -134,13 +115,14 @@ def server(config: dict):
             )),
             'original': row['path']
         }
+    del db
 
     thumbnailsFolder = pathJoin(config["paths"]["data"], "thumbnails")
     # Set to absolute path if is relative
     if not isabs(thumbnailsFolder):
         thumbnailsFolder = pathJoin(config['config_dir'], thumbnailsFolder)
 
-    app = createApp(imgs, thumbnailsFolder, config['config_dir'])
+    app = createApp(imgs, thumbnailsFolder, config['config_dir'], dbPath)
     app.run(
         debug=True,
         host=config['server']['host'],
