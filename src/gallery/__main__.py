@@ -9,7 +9,7 @@ from media.thumbnails import ImgThumbnail, VidThumbnail
 from media.mediatype import MediaType, GetMediaType
 from utils.filehash import SHA1
 from utils.paths import CreatePath
-from gallery.app import Run
+from gallery.app import createApp
 import tomllib
 from collections import defaultdict
 import argparse
@@ -140,9 +140,11 @@ def server(config: dict):
     if not isabs(thumbnailsFolder):
         thumbnailsFolder = pathJoin(config['config_dir'], thumbnailsFolder)
 
-    Run(
-        imgs, thumbnailsFolder, config['config_dir'],
-        config['server']['host'], config['server']['port']
+    app = createApp(imgs, thumbnailsFolder, config['config_dir'])
+    app.run(
+        debug=True,
+        host=config['server']['host'],
+        port=config['server']['port']
     )
 
 

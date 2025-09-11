@@ -2,83 +2,63 @@ from flask import Flask, render_template, send_from_directory, send_file, abort
 from flask import Response, make_response, jsonify
 from os.path import isabs, join as pathJoin
 
-app = Flask(__name__)
 
-# Configuration
-MEDIA_FOLDER = None
-MEDIA = []
-CONFIG_FOLDER = None
-
-
-@app.route('/')
-def index():
-    """Main gallery page"""
-    return render_template('gallery.html')
-
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    return send_from_directory("static", filename)
-
-
-@app.route('/api/media')
-def get_mediaInfo():
-    """API endpoint to get all images with their aspect ratios"""
-    return jsonify(MEDIA['info'])
-
-
-def cachedResp(resp: Response) -> Response:
-    resp = make_response(resp)
-    resp.headers['Cache-Control'] = 'public, max-age=86400, immutable'
-    return resp
-
-
-@app.route('/files/<hash>/thumbnail')
-def serve_thumbnail(hash):
-    if hash in MEDIA['path']:
-        return cachedResp(send_from_directory(
-            MEDIA_FOLDER,
-            MEDIA['path'][hash]['thumbnail']
-        ))
-    else:
-        abort(404)
-
-
-@app.route('/files/<hash>/original')
-def serve_originalMedia(hash):
-    if hash in MEDIA['path']:
-        original_path = MEDIA['path'][hash]['original']
-        # Path is relative
-        if not isabs(original_path):
-            # Convert to absolute path based on current working directory
-            original_path = pathJoin(CONFIG_FOLDER, original_path)
-        return cachedResp(send_file(original_path))
-    else:
-        abort(404)
-
-
-def Run(
+def createApp(
     media: list,
     mediaFolder: str,
-    configFolder: str,
-    host: str = '127.0.0.1',
-    port: int = 5000
-):
-    global MEDIA, MEDIA_FOLDER, CONFIG_FOLDER
-    MEDIA = media
-    CONFIG_FOLDER = configFolder
-    MEDIA_FOLDER = mediaFolder
+    configFolder: str
+) -> Flask:
+    app = Flask(__name__)
+    app.config['media'] = media
+    app.config['mediaDir'] = mediaFolder
+    app.config['configDir'] = configFolder
 
-    print("Starting Gallery Webserver")
-    print("=" * 50)
+    @app.route('/')
+    def index():
+        """Main gallery page"""
+        return render_template('gallery.html')
 
-    app.run(debug=True, host=host, port=port)
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('404.html'), 404
 
+    @app.route('/static/<path:filename>')
+    def serve_static(filename):
+        return send_from_directory("static", filename)
 
-if __name__ == '__main__':
-    Run()
+    @app.route('/api/media')
+    def get_mediaInfo():
+        """API endpoint to get all images with their aspect ratios"""
+        return jsonify(app.config['media']['info'])
+
+    def cachedResp(resp: Response) -> Response:
+        resp = make_response(resp)
+        resp.headers['Cache-Control'] = 'public, max-age=86400, immutable'
+        return resp
+
+    @app.route('/files/<hash>/thumbnail')
+    def serve_thumbnail(hash):
+        if hash in app.config['media']['path']:
+            return cachedResp(send_from_directory(
+                app.config['mediaDir'],
+                app.config['media']['path'][hash]['thumbnail']
+            ))
+        else:
+            abort(404)
+
+    @app.route('/files/<hash>/original')
+    def serve_originalMedia(hash):
+        if hash in app.config['media']['path']:
+            original_path = app.config['media']['path'][hash]['original']
+            # Path is relative
+            if not isabs(original_path):
+                # Convert to absolute path based on current working directory
+                original_path = pathJoin(
+                    app.config['configDir'],
+                    original_path
+                )
+            return cachedResp(send_file(original_path))
+        else:
+            abort(404)
+
+    return app
