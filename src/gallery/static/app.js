@@ -114,7 +114,7 @@ function openLightbox(idx) {
 	currMediaIdx = idx;
 	const lightboxImg = document.getElementById('lightbox-img');
 	const lightboxVid = document.getElementById('lightbox-vid');
-	if (allMedia[idx].video === 0) {
+	if (allMedia[idx].video === false) {
 		lightboxImg.src = `/files/${allMedia[idx].hash}/original`;
 		lightboxImg.alt = allMedia[idx].name;
 
@@ -187,7 +187,7 @@ function renderGallery() {
 
 			container.appendChild(imgElement);
 
-			if (img.video === 1 && img.duration) {
+			if (img.video === true && img.duration) {
 				const durationDiv = document.createElement('div');
 				durationDiv.className = 'video-duration';
 

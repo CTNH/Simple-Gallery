@@ -1,6 +1,6 @@
 from flask import Flask, render_template, send_from_directory, send_file, abort
 from flask import Response, make_response, jsonify
-from os.path import isabs, join as pathJoin
+from os.path import isabs, join as pathJoin, exists, basename
 from gallery.extensions import db
 
 app = Flask(__name__)
@@ -64,22 +64,58 @@ def initDB(
 
         db.session.add_all(rows)
         db.session.commit()
-        print(f'{hashDupe} hash, {pathDupe} path duplicates not added')
+        print(f'{hashDupe} hash, {pathDupe} path duplicates not added.')
 
 
 def createApp(
-    media: list,
     mediaFolder: str,
     configFolder: str,
-    dbPath: str
+    dbPath: str,
+    thumbnailSize: int
 ) -> Flask:
-    app.config['media'] = media
+    if not exists(dbPath):
+        print(f'Database file {dbPath} not found.')
+        return
+
+    def thumbnailPath(hash: str) -> (str, str):
+        return (
+            f'{hash[:2]}/{hash[2:4]}/',
+            f'{hash[4:]}-{thumbnailSize}.jpg'
+        )
+
     app.config['mediaDir'] = mediaFolder
     app.config['configDir'] = configFolder
 
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{dbPath}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
+
+    # Create list of media info and paths from database
+    with app.app_context():
+        from gallery.models import MediaPath, Media
+        # Get media list from database
+        rows = db.session.query(
+            Media.hash,
+            MediaPath.path,
+            Media.aspectratio,
+            Media.video,
+            Media.duration
+        ).join(MediaPath.media).order_by(MediaPath.path).all()
+
+        app.config['mediaInfo'] = []
+        app.config['mediaPath'] = {}
+        for row in rows:
+            app.config['mediaInfo'].append({
+                'hash': row[0],
+                'name': basename(row[1]),
+                'aspectRatio': row[2],
+                'video': row[3],
+                'duration': row[4]
+            })
+            app.config['mediaPath'][row[0]] = {
+                'thumbnail': ''.join(thumbnailPath(row[0])),
+                'original': row[1]
+            }
 
     @app.route('/')
     def index():
@@ -97,7 +133,7 @@ def createApp(
     @app.route('/api/media')
     def get_mediaInfo():
         """API endpoint to get all images with their aspect ratios"""
-        return jsonify(app.config['media']['info'])
+        return jsonify(app.config['mediaInfo'])
 
     def cachedResp(resp: Response) -> Response:
         resp = make_response(resp)
@@ -106,18 +142,18 @@ def createApp(
 
     @app.route('/files/<hash>/thumbnail')
     def serve_thumbnail(hash):
-        if hash in app.config['media']['path']:
+        if hash in app.config['mediaPath']:
             return cachedResp(send_from_directory(
                 app.config['mediaDir'],
-                app.config['media']['path'][hash]['thumbnail']
+                app.config['mediaPath'][hash]['thumbnail']
             ))
         else:
             abort(404)
 
     @app.route('/files/<hash>/original')
     def serve_originalMedia(hash):
-        if hash in app.config['media']['path']:
-            original_path = app.config['media']['path'][hash]['original']
+        if hash in app.config['mediaPath']:
+            original_path = app.config['mediaPath'][hash]['original']
             # Path is relative
             if not isabs(original_path):
                 # Convert to absolute path based on current working directory

@@ -1,9 +1,7 @@
 from pathlib import Path
 from os import fspath
 from os.path import join as pathJoin
-from os.path import basename, dirname, exists, isabs
-from database import schema
-from database.db import Database
+from os.path import dirname, exists, isabs
 from media.metadataExtract import MetaExtract
 from media.thumbnails import ImgThumbnail, VidThumbnail
 from media.mediatype import MediaType, GetMediaType
@@ -78,9 +76,9 @@ def initialize(config: dict):
         metadataList.append(defaultdict(lambda: None, metadata))
 
     initDB(
-        pathJoin(DATA_PATH, DATABASE_NAME),
-        metadataList,
-        config["database"]["commit_batch_size"]
+        dbPath=pathJoin(DATA_PATH, DATABASE_NAME),
+        data=metadataList,
+        commitBatchSize=config["database"]["commit_batch_size"]
     )
 
 
@@ -94,36 +92,17 @@ def server(config: dict):
         print(f'Cannot find database file "{dbPath}".')
         return
 
-    db = Database(dbPath)
-
-    imgs = {
-        'info': [],
-        'path': {}
-    }
-    for row in db.exec(schema.GET_MEDIA_LIST):
-        imgs['info'].append({
-            'hash': row['hash'],
-            'name': basename(row['path']),
-            'aspectRatio': row['aspectratio'],
-            'video': row['video'],
-            'duration': row['duration']
-        })
-        imgs['path'][row['hash']] = {
-            'thumbnail': ''.join(thumbnailPath(
-                row['hash'],
-                min(config["media"]["thumbnail_size"])
-            )),
-            'original': row['path']
-        }
-    del db
-
     thumbnailsFolder = pathJoin(config["paths"]["data"], "thumbnails")
     # Set to absolute path if is relative
     if not isabs(thumbnailsFolder):
         thumbnailsFolder = pathJoin(config['config_dir'], thumbnailsFolder)
 
-    app = createApp(imgs, thumbnailsFolder, config['config_dir'], dbPath)
-    app.run(
+    createApp(
+        mediaFolder=thumbnailsFolder,
+        configFolder=config['config_dir'],
+        dbPath=dbPath,
+        thumbnailSize=min(config["media"]["thumbnail_size"])
+    ).run(
         debug=True,
         host=config['server']['host'],
         port=config['server']['port']
