@@ -10,8 +10,10 @@ dependencies = [
 	"pillow",
 	"pillow-heif",
 	"exifread",
-	"Flask"
+	"Flask",
+	"Flask-SQLAlchemy"
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
