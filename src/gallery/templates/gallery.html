@@ -25,6 +25,22 @@
 			<source src=""/>
 		</video>
         <button class="lightbox-nav lightbox-next" onclick="nextMedia()">›</button>
+
+		<div class="lightbox-button-row">
+			<a onclick="rotate(-90); return false;" aria-label="Rotate Left" role="button" title="Rotate Image Left">
+				<svg viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+					<path d="M14,28V16a2.0023,2.0023,0,0,1,2-2H28a2.0023,2.0023,0,0,1,2,2V28a2.0023,2.0023,0,0,1-2,2H16A2.0023,2.0023,0,0,1,14,28Z" transform="translate(0 0)"/>
+					<path d="M2,15l1.41-1.41L6,16.17V11a7.0078,7.0078,0,0,1,7-7h5V6H13a5.0057,5.0057,0,0,0-5,5v5.17l2.59-2.58L12,15,7,20Z" transform="translate(0 0)"/>
+				</svg>
+			</a>
+			<a onclick="rotate(90); return false;" aria-label="Rotate Right" role="button" title="Rotate Image Right">
+				<svg viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+					<path d="M16,30H4a2.0023,2.0023,0,0,1-2-2V16a2.0023,2.0023,0,0,1,2-2H16a2.0023,2.0023,0,0,1,2,2V28A2.0023,2.0023,0,0,1,16,30Z" transform="translate(0)"/>
+					<path d="M30,15l-1.41-1.41L26,16.17V11a7.0078,7.0078,0,0,0-7-7H14V6h5a5.0057,5.0057,0,0,1,5,5v5.17l-2.59-2.58L20,15l5,5Z" transform="translate(0)"/>
+				</svg>
+			</a>
+		</div>
+
     </div>
 
     <script src="/static/app.js"></script>

@@ -114,7 +114,11 @@ function openLightbox(idx) {
 	currMediaIdx = idx;
 	const lightboxImg = document.getElementById('lightbox-img');
 	const lightboxVid = document.getElementById('lightbox-vid');
+
+	document.getElementById('lightbox').classList.add('active');
+
 	if (allMedia[idx].video === false) {
+		rotateLightboxImg();
 		lightboxImg.src = `/files/${allMedia[idx].hash}/original`;
 		lightboxImg.alt = allMedia[idx].name;
 
@@ -127,10 +131,28 @@ function openLightbox(idx) {
 		lightboxVid.classList.add('active');
 		lightboxImg.classList.remove('active');
 	}
-	document.getElementById('lightbox').classList.add('active');
 
 	// Prevent Scrolling
 	document.body.style.overflow = 'hidden';
+}
+
+function rotateLightboxImg() {
+	const lightboxImg = document.getElementById('lightbox-img');
+
+	lightboxImg.style.maxWidth = '90%';
+	lightboxImg.style.maxHeight = '96%';
+	if (allMedia[currMediaIdx].rotation !== null) {
+		lightboxImg.style.transform = 'rotate(' + allMedia[currMediaIdx].rotation + 'deg)';
+		if (allMedia[currMediaIdx].rotation === 90 || allMedia[currMediaIdx].rotation === 270) {
+			lightbox = document.getElementById('lightbox');
+			// Swap width and height
+			lightboxImg.style.maxWidth = (lightbox.clientHeight*0.9) + 'px';
+			lightboxImg.style.maxHeight = (lightbox.clientWidth*0.96) + 'px';
+		}
+	}
+	else {
+		lightboxImg.style.transform = '';
+	}
 }
 
 function closeLightbox() {
@@ -151,6 +173,26 @@ function prevMedia() {
 	document.getElementById('lightbox-vid').src = "";
 	currMediaIdx = (currMediaIdx - 1 + allMedia.length) % allMedia.length;
 	openLightbox(currMediaIdx);
+}
+
+async function rotate(deg) {
+	if (deg !== 90 && deg !== -90)
+		return;
+
+	const direction = (deg === 90) ? '/right' : '/left';
+	const resp = await fetch(
+		'/api/rotate/' + allMedia[currMediaIdx].hash + direction,
+		{method: 'POST'}
+	);
+	const jsonResp = await resp.json();
+	if (!jsonResp.success)
+		return;
+
+	// Apply now
+	let rotation = allMedia[currMediaIdx].rotation;
+	rotation = (rotation == null) ? 0 : rotation;
+	allMedia[currMediaIdx].rotation = (rotation + deg + 360) % 360;
+	rotateLightboxImg();
 }
 
 

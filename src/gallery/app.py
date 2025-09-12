@@ -99,7 +99,8 @@ def createApp(
             MediaPath.path,
             Media.aspectratio,
             Media.video,
-            Media.duration
+            Media.duration,
+            Media.rotation
         ).join(MediaPath.media).order_by(MediaPath.path).all()
 
         app.config['mediaInfo'] = []
@@ -110,7 +111,8 @@ def createApp(
                 'name': basename(row[1]),
                 'aspectRatio': row[2],
                 'video': row[3],
-                'duration': row[4]
+                'duration': row[4],
+                'rotation': row[5]
             })
             app.config['mediaPath'][row[0]] = {
                 'thumbnail': ''.join(thumbnailPath(row[0])),
@@ -164,5 +166,39 @@ def createApp(
             return cachedResp(send_file(original_path))
         else:
             abort(404)
+
+    @app.route(
+        '/api/rotate/<string:hash>/<string:direction>',
+        methods=['POST']
+    )
+    def rotateImage(hash, direction):
+        media = Media.query.filter_by(hash=hash).first()
+        directions = {
+            'right': 90,
+            'left': -90,
+        }
+        if not media or direction not in directions:
+            return jsonify({
+                "success": False,
+                "msg": f"Failed to rotate {hash} {direction}"
+            })
+
+        media.rotation = ((media.rotation or 0) + directions[direction]) % 360
+        db.session.commit()
+
+        # Rotate current session
+        for m in app.config['mediaInfo']:
+            if m['hash'] == hash:
+                m['rotation'] = media.rotation
+                break
+
+        return jsonify({
+            "success": True,
+            "msg": f"Rotated {hash} {direction}"
+        })
+
+    @app.route('/addTag')
+    def addTag():
+        pass
 
     return app

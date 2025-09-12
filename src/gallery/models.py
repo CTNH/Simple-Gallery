@@ -22,6 +22,8 @@ class Media(db.Model):
     video = db.Column(db.Boolean, nullable=False)
     duration = db.Column(db.String)
 
+    rotation = db.Column(db.Integer, nullable=True)
+
     def formattedDuration(self) -> str:
         return self.duration
 
