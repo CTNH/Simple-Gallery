@@ -144,28 +144,27 @@ def createApp(
 
     @app.route('/files/<hash>/thumbnail')
     def serve_thumbnail(hash):
-        if hash in app.config['mediaPath']:
-            return cachedResp(send_from_directory(
-                app.config['mediaDir'],
-                app.config['mediaPath'][hash]['thumbnail']
-            ))
-        else:
+        if hash not in app.config['mediaPath']:
             abort(404)
+        return cachedResp(send_from_directory(
+            app.config['mediaDir'],
+            app.config['mediaPath'][hash]['thumbnail']
+        ))
 
     @app.route('/files/<hash>/original')
     def serve_originalMedia(hash):
-        if hash in app.config['mediaPath']:
-            original_path = app.config['mediaPath'][hash]['original']
-            # Path is relative
-            if not isabs(original_path):
-                # Convert to absolute path based on current working directory
-                original_path = pathJoin(
-                    app.config['configDir'],
-                    original_path
-                )
-            return cachedResp(send_file(original_path))
-        else:
+        if hash not in app.config['mediaPath']:
             abort(404)
+
+        original_path = app.config['mediaPath'][hash]['original']
+        # Path is relative
+        if not isabs(original_path):
+            # Convert to absolute path based on current working directory
+            original_path = pathJoin(
+                app.config['configDir'],
+                original_path
+            )
+        return cachedResp(send_file(original_path))
 
     @app.route(
         '/api/rotate/<string:hash>/<string:direction>',

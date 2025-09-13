@@ -116,6 +116,10 @@ function openLightbox(idx) {
 	const lightboxVid = document.getElementById('lightbox-vid');
 
 	document.getElementById('lightbox').classList.add('active');
+	document.getElementById('lightbox-button-row').style.display = 'flex';
+	document.querySelectorAll('.lightbox-nav').forEach((elem) => {
+		elem.style.display = '';
+	});
 
 	if (allMedia[idx].video === false) {
 		rotateLightboxImg();
@@ -276,6 +280,27 @@ document.getElementById('lightbox').addEventListener('click', (e) => {
 		closeLightbox();
 	}
 });
+
+const lightboxVid = document.getElementById('lightbox-vid');
+['play', 'pause', 'ended'].forEach(event =>
+	lightboxVid.addEventListener(event, (e) => {
+		const vid = e.target;
+		const buttonRow = document.getElementById('lightbox-button-row');
+		if (vid.paused || vid.ended) {
+			buttonRow.style.display = 'flex';
+			document.querySelectorAll('.lightbox-nav').forEach((elem) => {
+				elem.style.display = '';
+			});
+		}
+		else {
+			buttonRow.style.display = 'none';
+			document.querySelectorAll('.lightbox-nav').forEach((elem) => {
+				elem.style.display = 'none';
+			});
+		}
+	})
+);
+
 
 document.addEventListener('keydown', (e) => {
 	switch (e.key) {
