@@ -254,76 +254,42 @@ function updateInfoPanel() {
 		finPath += `<a href="/api/filter/path/${cumPath}">${p}/</a>`
 	});
 
-	// Create info HTML
-	infoContent.innerHTML = `
-		<div class="info-section">
-			<h3>File Information</h3>
-			<div class="info-item">
-				<span class="info-label">Name:</span>
-				<span class="info-value">${media.name || 'Unknown'}</span>
-			</div>
-			<div class="info-item">
-				<span class="info-label">Type:</span>
-				<span class="info-value">${media.video ? 'Video' : 'Image'}</span>
-			</div>
-			<div class="info-item">
-				<span class="info-label">Size:</span>
-				<span class="info-value">${formatFileSize(media.fileSize)}</span>
-			</div>
-			<div class="info-item">
-				<span class="info-label">Dimensions:</span>
-				<span class="info-value">${media.width || '?'} × ${media.height || '?'}</span>
-			</div>
-			<div class="info-item">
-				<span class="info-label">Aspect Ratio:</span>
-				<span class="info-value">${media.aspectRatio ? media.aspectRatio.toFixed(2) : 'Unknown'}</span>
-			</div>
-			${media.video && media.duration ? `
-				<div class="info-item">
-					<span class="info-label">Duration:</span>
-					<span class="info-value">${media.duration}</span>
-				</div>
-			` : ''}
-			${media.rotation !== null && media.rotation !== undefined ? `
-				<div class="info-item">
-					<span class="info-label">Rotation:</span>
-					<span class="info-value">${media.rotation}°</span>
-				</div>
-			` : ''}
-			<div class="info-item">
-				<span class="info-label">Path:</span>
-				<span class="info-value">${finPath || 'Unknown'}</span>
-			</div>
-		</div>
-
-		<div class="info-section">
-			<h3>Technical Details</h3>
-			<div class="info-item">
-				<span class="info-label">Hash:</span>
-				<span class="info-value hash">${media.hash || 'Unknown'}</span>
-			</div>
-			<div class="info-item">
-				<span class="info-label">Created:</span>
-				<span class="info-value">${formatDate(media.dateCreated)}</span>
-			</div>
-			<div class="info-item">
-				<span class="info-label">Modified:</span>
-				<span class="info-value">${formatDate(media.dateModified)}</span>
-			</div>
-		</div>
-
-		<div class="info-section">
-			<h3>Gallery Info</h3>
-			<div class="info-item">
-				<span class="info-label">Index:</span>
-				<span class="info-value">${currMediaIdx + 1} of ${allMedia.length}</span>
-			</div>
-			<div class="info-item">
-				<span class="info-label">Display Size:</span>
-				<span class="info-value">${Math.round(media.width || 0)} × ${Math.round(media.height || 0)} px</span>
-			</div>
-		</div>
-	`;
+	const infoData = new Map([
+		["File Information", new Map([
+			["Name", media.name || 'Unknown'],
+			["Type", media.video ? 'Video' : 'Image'],
+			["Size", formatFileSize(media.fileSize)],
+			["Dimensions", (media.width || '?') + ' x ' + (media.height || '?')],
+			["Aspect Ratio", media.aspectRatio ? media.aspectRatio.toFixed(2) : 'Unknown'],
+			["Duration", (media.video && media.duration) ? media.duration : '-'],
+			["Rotation", media.rotation],
+			["Path", finPath || 'Unknown']
+		])],
+		["Technical Details", new Map([
+			["Hash", media.hash],
+			["Created", formatDate(media.dateCreated)],
+			["Modified", formatDate(media.dateModified)]
+		])],
+		["Gallery Info", new Map([
+			["Index", (currMediaIdx + 1) + ' of '  + allMedia.length],
+			["Display Size", Math.round(media.width || 0) + ' x ' + Math.round(media.height || 0)]
+		])]
+	]);
+	infoContent.innerHTML = "";
+	for (const [infoSection, infoItems] of infoData) {
+		infoContent.innerHTML += '<div class="info-section"><h3>' + infoSection + "</h3>"
+		for (const [infoLabel, infoValue] of infoItems) {
+			infoContent.innerHTML += '<div class="info-item">' +
+									'<span class="info-label">' +
+									infoLabel +
+									'</span>' +
+									'<span class="info-value">' +
+									infoValue +
+									'</span>' +
+									'</div>';
+		}
+		infoContent.innerHTML += '</div>'
+	}
 }
 
 async function rotate(deg) {
