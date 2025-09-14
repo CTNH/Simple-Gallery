@@ -100,7 +100,9 @@ def createApp(
             Media.aspectratio,
             Media.video,
             Media.duration,
-            Media.rotation
+            Media.rotation,
+            Media.width,
+            Media.height
         ).join(MediaPath.media).order_by(MediaPath.path).all()
 
         app.config['mediaInfo'] = []
@@ -112,7 +114,10 @@ def createApp(
                 'aspectRatio': row[2],
                 'video': row[3],
                 'duration': row[4],
-                'rotation': row[5]
+                'rotation': row[5],
+                'width': row[6],
+                'height': row[7],
+                'path': row[1]
             })
             app.config['mediaPath'][row[0]] = {
                 'thumbnail': ''.join(thumbnailPath(row[0])),
@@ -195,6 +200,13 @@ def createApp(
             "success": True,
             "msg": f"Rotated {hash} {direction}"
         })
+
+    @app.route(
+        '/api/filter/path/<path:path>'
+    )
+    def getFromPath(path):
+        Media.query.filter(MediaPath.path.like(f'{path}%')).all()
+        return cachedResp()
 
     @app.route('/addTag')
     def addTag():

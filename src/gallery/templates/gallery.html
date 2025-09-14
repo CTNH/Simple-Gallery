@@ -1,30 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Image Gallery</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Media Gallery</title>
 	<link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="header">
-        <h1>Gallery</h1>
-    </div>
+	<div class="header">
+		<h1>Media Gallery</h1>
+		<p>A responsive image and video gallery</p>
+	</div>
 
-    <div class="stats" id="stats"></div>
+	<div class="stats" id="stats">Loading...</div>
 
-    <div class="gallery-container" id="gallery">
-        <div class="loading">Loading images...</div>
-    </div>
+	<div class="gallery-container" id="gallery">
+		<div class="loading">Loading images...</div>
+	</div>
 
-    <div class="lightbox" id="lightbox">
-        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-        <button class="lightbox-nav lightbox-prev" onclick="prevMedia()">‹</button>
-        <img id="lightbox-img" src="" alt="">
-        <video id="lightbox-vid" controls>
-			<source src=""/>
-		</video>
-        <button class="lightbox-nav lightbox-next" onclick="nextMedia()">›</button>
+	<!-- Lightbox -->
+	<div class="lightbox" id="lightbox">
+		<button class="lightbox-close" onclick="closeLightbox()">&times</button>
+
+		<button class="lightbox-nav lightbox-prev" onclick="prevMedia()">‹</button>
+		<button class="lightbox-nav lightbox-next" onclick="nextMedia()">›</button>
+
+		<div id="lightbox-media-container">
+			<img id="lightbox-img" alt="">
+			<video id="lightbox-vid" controls></video>
+		</div>
 
 		<div id="lightbox-button-row">
 			<a onclick="rotate(-90); return false;" aria-label="Rotate Left" role="button" title="Rotate Image Left">
@@ -39,9 +43,24 @@
 					<path d="M30,15l-1.41-1.41L26,16.17V11a7.0078,7.0078,0,0,0-7-7H14V6h5a5.0057,5.0057,0,0,1,5,5v5.17l-2.59-2.58L20,15l5,5Z" transform="translate(0)"/>
 				</svg>
 			</a>
+			<a onclick="toggleInfoPanel()" id="info-button" role="button" tile="Show Media Info">
+				<svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+					<path d="M8 16A8 8 0 108 0a8 8 0 000 16zm0-9a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 7zm0-3a1 1 0 000 2h.007a1 1 0 000-2H8z" fill-rule="evenodd"/>
+				</svg>
+			</a>
 		</div>
+	</div>
 
-    </div>
+	<!-- Info Panel -->
+	<div class="info-panel" id="info-panel">
+		<div class="info-header">
+			<h2>Media Information</h2>
+			<button class="info-close" onclick="closeInfoPanel()">×</button>
+		</div>
+		<div class="info-content" id="info-content">
+			<!-- Info content will be populated by JavaScript -->
+		</div>
+	</div>
 
     <script src="/static/app.js"></script>
 </body>

@@ -4,6 +4,7 @@ let statsElement = document.getElementById('stats');
 let observer;
 let currMediaIdx = 0;
 let lastWinWidth = window.innerWidth;
+let infoPanelOpen = false;
 
 // Fetch images from API
 async function loadMedia() {
@@ -136,6 +137,11 @@ function openLightbox(idx) {
 		lightboxImg.classList.remove('active');
 	}
 
+	// Update info panel if it's open
+	if (infoPanelOpen) {
+		updateInfoPanel();
+	}
+
 	// Prevent Scrolling
 	document.body.style.overflow = 'hidden';
 }
@@ -147,10 +153,12 @@ function rotateLightboxImg() {
 	lightboxImg.style.maxHeight = '96%';
 	if (allMedia[currMediaIdx].rotation !== null) {
 		lightboxImg.style.transform = 'rotate(' + allMedia[currMediaIdx].rotation + 'deg)';
+		const infoPanelWidth = (infoPanelOpen) ? document.getElementById('info-panel').clientWidth : 0;
+
 		if (allMedia[currMediaIdx].rotation === 90 || allMedia[currMediaIdx].rotation === 270) {
-			lightbox = document.getElementById('lightbox');
+			const lightbox = document.getElementById('lightbox');
 			// Swap width and height
-			lightboxImg.style.maxWidth = (lightbox.clientHeight*0.9) + 'px';
+			lightboxImg.style.maxWidth = ((lightbox.clientHeight-infoPanelWidth)*0.9) + 'px';
 			lightboxImg.style.maxHeight = (lightbox.clientWidth*0.96) + 'px';
 		}
 	}
@@ -162,6 +170,7 @@ function rotateLightboxImg() {
 function closeLightbox() {
 	document.getElementById('lightbox-vid').src = "";
 	document.getElementById('lightbox').classList.remove('active');
+	closeInfoPanel();
 
 	// Restore Scrolling
 	document.body.style.overflow = '';
@@ -177,6 +186,144 @@ function prevMedia() {
 	document.getElementById('lightbox-vid').src = "";
 	currMediaIdx = (currMediaIdx - 1 + allMedia.length) % allMedia.length;
 	openLightbox(currMediaIdx);
+}
+
+function toggleInfoPanel() {
+	const infoButton = document.getElementById('info-button');
+
+	if (infoPanelOpen) {
+		closeInfoPanel();
+		infoButton.classList.remove('active');
+	} else {
+		openInfoPanel();
+		infoButton.classList.add('active');
+	}
+}
+
+function openInfoPanel() {
+	const infoPanel = document.getElementById('info-panel');
+	const lightboxContent = document.querySelector('.lightbox');
+
+	infoPanelOpen = true;
+	infoPanel.classList.add('active');
+	lightboxContent.classList.add('info-open');
+	rotateLightboxImg();
+	updateInfoPanel();
+}
+
+function closeInfoPanel() {
+	const infoPanel = document.getElementById('info-panel');
+	const lightboxContent = document.querySelector('.lightbox');
+	const infoButton = document.getElementById('info-button');
+
+	infoPanelOpen = false;
+	infoPanel.classList.remove('active');
+	lightboxContent.classList.remove('info-open');
+	infoButton.classList.remove('active');
+}
+
+function isMobile() {
+	return window.innerWidth <= 768;
+}
+
+function updateInfoPanel() {
+	if (!infoPanelOpen || currMediaIdx >= allMedia.length) return;
+
+	const media = allMedia[currMediaIdx];
+	const infoContent = document.getElementById('info-content');
+
+	// Format file size
+	const formatFileSize = (bytes) => {
+		if (!bytes) return 'Unknown';
+		const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+		const i = Math.floor(Math.log(bytes) / Math.log(1024));
+		return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+	};
+
+	// Format date
+	const formatDate = (timestamp) => {
+		if (!timestamp) return 'Unknown';
+		const date = new Date(timestamp);
+		return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+	};
+
+	let finPath = '';
+	let cumPath = '';
+	media.path.split('/').slice(0, -1).forEach((p) => {
+		cumPath += p + '/';
+		finPath += `<a href="/api/filter/path/${cumPath}">${p}/</a>`
+	});
+
+	// Create info HTML
+	infoContent.innerHTML = `
+		<div class="info-section">
+			<h3>File Information</h3>
+			<div class="info-item">
+				<span class="info-label">Name:</span>
+				<span class="info-value">${media.name || 'Unknown'}</span>
+			</div>
+			<div class="info-item">
+				<span class="info-label">Type:</span>
+				<span class="info-value">${media.video ? 'Video' : 'Image'}</span>
+			</div>
+			<div class="info-item">
+				<span class="info-label">Size:</span>
+				<span class="info-value">${formatFileSize(media.fileSize)}</span>
+			</div>
+			<div class="info-item">
+				<span class="info-label">Dimensions:</span>
+				<span class="info-value">${media.width || '?'} × ${media.height || '?'}</span>
+			</div>
+			<div class="info-item">
+				<span class="info-label">Aspect Ratio:</span>
+				<span class="info-value">${media.aspectRatio ? media.aspectRatio.toFixed(2) : 'Unknown'}</span>
+			</div>
+			${media.video && media.duration ? `
+				<div class="info-item">
+					<span class="info-label">Duration:</span>
+					<span class="info-value">${media.duration}</span>
+				</div>
+			` : ''}
+			${media.rotation !== null && media.rotation !== undefined ? `
+				<div class="info-item">
+					<span class="info-label">Rotation:</span>
+					<span class="info-value">${media.rotation}°</span>
+				</div>
+			` : ''}
+			<div class="info-item">
+				<span class="info-label">Path:</span>
+				<span class="info-value">${finPath || 'Unknown'}</span>
+			</div>
+		</div>
+
+		<div class="info-section">
+			<h3>Technical Details</h3>
+			<div class="info-item">
+				<span class="info-label">Hash:</span>
+				<span class="info-value hash">${media.hash || 'Unknown'}</span>
+			</div>
+			<div class="info-item">
+				<span class="info-label">Created:</span>
+				<span class="info-value">${formatDate(media.dateCreated)}</span>
+			</div>
+			<div class="info-item">
+				<span class="info-label">Modified:</span>
+				<span class="info-value">${formatDate(media.dateModified)}</span>
+			</div>
+		</div>
+
+		<div class="info-section">
+			<h3>Gallery Info</h3>
+			<div class="info-item">
+				<span class="info-label">Index:</span>
+				<span class="info-value">${currMediaIdx + 1} of ${allMedia.length}</span>
+			</div>
+			<div class="info-item">
+				<span class="info-label">Display Size:</span>
+				<span class="info-value">${Math.round(media.width || 0)} × ${Math.round(media.height || 0)} px</span>
+			</div>
+		</div>
+	`;
 }
 
 async function rotate(deg) {
@@ -197,8 +344,12 @@ async function rotate(deg) {
 	rotation = (rotation == null) ? 0 : rotation;
 	allMedia[currMediaIdx].rotation = (rotation + deg + 360) % 360;
 	rotateLightboxImg();
-}
 
+	// Update info panel if it's open
+	if (infoPanelOpen) {
+		updateInfoPanel();
+	}
+}
 
 function renderGallery() {
 	const viewWidth = window.innerWidth - 16; // Account for padding
@@ -271,12 +422,17 @@ function handleResize() {
 		if (allMedia.length > 0) {
 			renderGallery();
 		}
+
+		// Close info panel if switching between mobile/desktop
+		if (infoPanelOpen) {
+			closeInfoPanel();
+		}
 	}, 350);
 }
 
 // Close lightbox by clicking outside the image
-document.getElementById('lightbox').addEventListener('click', (e) => {
-	if (e.target.id === 'lightbox') {
+document.getElementById('lightbox-media-container').addEventListener('click', (e) => {
+	if (e.target.id === 'lightbox-media-container') {
 		closeLightbox();
 	}
 });
@@ -301,17 +457,26 @@ const lightboxVid = document.getElementById('lightbox-vid');
 	})
 );
 
-
 document.addEventListener('keydown', (e) => {
 	switch (e.key) {
 		case 'Escape':
-			closeLightbox();
+			if (infoPanelOpen) {
+				closeInfoPanel();
+			} else {
+				closeLightbox();
+			}
 			break;
 		case 'ArrowRight':
 			nextMedia();
 			break;
 		case 'ArrowLeft':
 			prevMedia();
+			break;
+		case 'i':
+		case 'I':
+			if (document.getElementById('lightbox').classList.contains('active')) {
+				toggleInfoPanel();
+			}
 			break;
 		default:
 			break;
@@ -327,6 +492,7 @@ window.addEventListener('resize', () => {
 		handleResize();
 	}
 });
+
 window.addEventListener('load', loadMedia);
 
 // Load images immediately if DOM is already ready
