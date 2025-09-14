@@ -162,6 +162,7 @@ function openLightbox(idx) {
 	// Update info panel if it's open
 	if (infoPanelOpen) {
 		updateInfoPanel();
+		document.getElementById('info-panel').classList.add('active');
 	}
 
 	// Prevent Scrolling
@@ -192,7 +193,7 @@ function rotateLightboxImg() {
 function closeLightbox() {
 	document.getElementById('lightbox-vid').src = "";
 	document.getElementById('lightbox').classList.remove('active');
-	closeInfoPanel();
+	document.getElementById('info-panel').classList.remove('active');
 
 	// Restore Scrolling
 	document.body.style.overflow = '';
@@ -273,7 +274,7 @@ function updateInfoPanel() {
 		["File Information", new Map([
 			["Name", media.name || 'Unknown'],
 			["Type", media.video ? 'Video' : 'Image'],
-			["Size", formatFileSize(media.fileSize)],
+			["Size", formatFileSize(media.size)],
 			["Dimensions", (media.width || '?') + ' x ' + (media.height || '?')],
 			["Aspect Ratio", media.aspectRatio ? media.aspectRatio.toFixed(2) : 'Unknown'],
 			["Duration", (media.video && media.duration) ? media.duration : '-'],
@@ -441,11 +442,7 @@ const lightboxVid = document.getElementById('lightbox-vid');
 document.addEventListener('keydown', (e) => {
 	switch (e.key) {
 		case 'Escape':
-			if (infoPanelOpen) {
-				closeInfoPanel();
-			} else {
-				closeLightbox();
-			}
+			closeLightbox();
 			break;
 		case 'ArrowRight':
 			nextMedia();

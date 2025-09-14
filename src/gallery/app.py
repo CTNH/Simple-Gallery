@@ -92,7 +92,8 @@ def createApp(
             Media.duration,
             Media.rotation,
             Media.width,
-            Media.height
+            Media.height,
+            Media.size
         ).join(MediaPath.media)
         if pathFilter is not None:
             rows = rows.filter(
@@ -123,7 +124,8 @@ def createApp(
                 'rotation': row[5],
                 'width': row[6],
                 'height': row[7],
-                'path': row[1]
+                'path': row[1],
+                'size': row[8]
             })
             app.config['mediaPath'][row[0]] = {
                 'thumbnail': ''.join(thumbnailPath(row[0])),
@@ -165,7 +167,8 @@ def createApp(
                     'rotation': row[5],
                     'width': row[6],
                     'height': row[7],
-                    'path': row[1]
+                    'path': row[1],
+                    'size': row[8]
                 })
             return jsonify(mediaInfo)
 
