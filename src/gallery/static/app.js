@@ -8,8 +8,16 @@ let infoPanelOpen = false;
 
 // Fetch images from API
 async function loadMedia() {
+	loadMediaByFilter();
+}
+
+async function loadMediaByFilter(path = null) {
 	try {
-		const response = await fetch('/api/media');
+		let apiEndpoint = '/api/media';
+		if (path !== null) {
+			apiEndpoint += '?path=' + path;
+		}
+		const response = await fetch(apiEndpoint);
 		allMedia = await response.json();
 
 		if (allMedia.length === 0) {
@@ -250,8 +258,8 @@ function updateInfoPanel() {
 	let finPath = '';
 	let cumPath = '';
 	media.path.split('/').slice(0, -1).forEach((p) => {
-		cumPath += p + '/';
-		finPath += `<a href="/api/filter/path/${cumPath}">${p}/</a>`
+		cumPath += p + "/";
+		finPath += `<a onclick="loadMediaByFilter('${cumPath}')">${p}</a>/`
 	});
 
 	const infoData = new Map([

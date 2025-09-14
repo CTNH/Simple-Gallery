@@ -1,7 +1,8 @@
 from flask import Flask, render_template, send_from_directory, send_file, abort
-from flask import Response, make_response, jsonify
+from flask import Response, make_response, jsonify, request as frequest
 from os.path import isabs, join as pathJoin, exists, basename
 from gallery.extensions import db
+from gallery.models import Media, MediaPath
 
 app = Flask(__name__)
 
@@ -16,7 +17,6 @@ def initDB(
     db.init_app(app)
 
     with app.app_context():
-        from gallery.models import Media, MediaPath
         db.create_all()
 
         # Get list of hash and paths
@@ -83,17 +83,7 @@ def createApp(
             f'{hash[4:]}-{thumbnailSize}.jpg'
         )
 
-    app.config['mediaDir'] = mediaFolder
-    app.config['configDir'] = configFolder
-
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{dbPath}'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    db.init_app(app)
-
-    # Create list of media info and paths from database
-    with app.app_context():
-        from gallery.models import MediaPath, Media
-        # Get media list from database
+    def getMediaInfo(pathFilter: str = None):
         rows = db.session.query(
             Media.hash,
             MediaPath.path,
@@ -103,7 +93,23 @@ def createApp(
             Media.rotation,
             Media.width,
             Media.height
-        ).join(MediaPath.media).order_by(MediaPath.path).all()
+        ).join(MediaPath.media)
+        if pathFilter is not None:
+            rows = rows.filter(
+                MediaPath.path.like(pathFilter)
+            )
+        return rows.order_by(MediaPath.path).all()
+
+    app.config['mediaDir'] = mediaFolder
+    app.config['configDir'] = configFolder
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{dbPath}'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db.init_app(app)
+
+    # Create list of media info and paths from database
+    with app.app_context():
+        rows = getMediaInfo()
 
         app.config['mediaInfo'] = []
         app.config['mediaPath'] = {}
@@ -140,7 +146,28 @@ def createApp(
     @app.route('/api/media')
     def get_mediaInfo():
         """API endpoint to get all images with their aspect ratios"""
-        return jsonify(app.config['mediaInfo'])
+        pathFilter = frequest.args.get('path', default=None)
+        if pathFilter is None:
+            return jsonify(app.config['mediaInfo'])
+
+        with app.app_context():
+            # Get media list from database
+            rows = getMediaInfo(f"{pathFilter}%")
+
+            mediaInfo = []
+            for row in rows:
+                mediaInfo.append({
+                    'hash': row[0],
+                    'name': basename(row[1]),
+                    'aspectRatio': row[2],
+                    'video': row[3],
+                    'duration': row[4],
+                    'rotation': row[5],
+                    'width': row[6],
+                    'height': row[7],
+                    'path': row[1]
+                })
+            return jsonify(mediaInfo)
 
     def cachedResp(resp: Response) -> Response:
         resp = make_response(resp)
