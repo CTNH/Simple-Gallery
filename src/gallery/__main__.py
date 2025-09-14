@@ -1,7 +1,7 @@
 from pathlib import Path
 from os import fspath
 from os.path import join as pathJoin
-from os.path import dirname, exists, isabs
+from os.path import dirname, exists, isabs, normpath
 from media.metadataExtract import MetaExtract
 from media.thumbnails import ImgThumbnail, VidThumbnail
 from media.mediatype import MediaType, GetMediaType
@@ -39,6 +39,8 @@ def initialize(config: dict):
 
     CreatePath(DATA_PATH)
 
+    MEDIA_PATH_LEN = len(MEDIA_PATH)
+
     metadataList = []
     # Recursively list all files
     for fpath in list(Path(MEDIA_PATH).rglob('*')):
@@ -50,7 +52,10 @@ def initialize(config: dict):
 
         hash = HASH_METHOD(mediaPath)
         metadata['hash'] = hash
-        metadata['path'] = mediaPath
+        metadata['path'] = pathJoin(
+            normpath(config["paths"]["media"]),
+            mediaPath[MEDIA_PATH_LEN:]
+        )
         metadata['aspectratio'] = metadata['width'] / metadata['height']
 
         print("Generating thumbnail")

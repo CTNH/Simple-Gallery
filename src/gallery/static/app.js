@@ -259,7 +259,7 @@ function updateInfoPanel() {
 	let cumPath = '';
 	media.path.split('/').slice(0, -1).forEach((p) => {
 		cumPath += p + "/";
-		finPath += `<a onclick="loadMediaByFilter('${cumPath}')">${p}</a>/`
+		finPath += `<a onclick="loadMediaByFilter('${cumPath}')" title="Show only media in '${cumPath}'">${p}</a>/`
 	});
 
 	const infoData = new Map([
