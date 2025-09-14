@@ -11,10 +11,10 @@ async function loadMedia() {
 	loadMediaByFilter();
 }
 
-async function loadMediaByFilter(path = null) {
+async function loadMediaByFilter(path = '/') {
 	try {
 		let apiEndpoint = '/api/media';
-		if (path !== null) {
+		if (path !== '/') {
 			apiEndpoint += '?path=' + path;
 		}
 		const response = await fetch(apiEndpoint);
@@ -25,12 +25,26 @@ async function loadMediaByFilter(path = null) {
 			return;
 		}
 
+		document.getElementById('filter-path').innerHTML = createPathButtons(path);
+
 		updateStats();
 		renderGallery();
 	} catch (error) {
 		console.error('Error loading images:', error);
 		galleryContainer.innerHTML = '<div class="error">Error loading images. Please check the console for details.</div>';
 	}
+}
+
+function createPathButtons(path) {
+	let cumPath = '';
+	let pathButtons = `<a onclick="loadMediaByFilter('/')" title="Show all media">ALL</a>/`;
+	if (path !== '/') {
+		path.split('/').slice(0, -1).forEach(segment => {
+			cumPath += segment + "/";
+			pathButtons += `<a onclick="loadMediaByFilter('${cumPath}')" title="Show only media in '${cumPath}'">${segment}</a>/`;
+		});
+	}
+	return pathButtons;
 }
 
 function updateStats() {
@@ -255,13 +269,6 @@ function updateInfoPanel() {
 		return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 	};
 
-	let finPath = '';
-	let cumPath = '';
-	media.path.split('/').slice(0, -1).forEach((p) => {
-		cumPath += p + "/";
-		finPath += `<a onclick="loadMediaByFilter('${cumPath}')" title="Show only media in '${cumPath}'">${p}</a>/`
-	});
-
 	const infoData = new Map([
 		["File Information", new Map([
 			["Name", media.name || 'Unknown'],
@@ -271,7 +278,7 @@ function updateInfoPanel() {
 			["Aspect Ratio", media.aspectRatio ? media.aspectRatio.toFixed(2) : 'Unknown'],
 			["Duration", (media.video && media.duration) ? media.duration : '-'],
 			["Rotation", media.rotation],
-			["Path", finPath || 'Unknown']
+			["Path", createPathButtons(media.path) || 'Unknown']
 		])],
 		["Technical Details", new Map([
 			["Hash", media.hash],

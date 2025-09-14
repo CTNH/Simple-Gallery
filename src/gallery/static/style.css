@@ -406,12 +406,14 @@ body {
 	opacity: 0.8;
 }
 
+#filter-path a,
 .info-value a {
 	text-decoration: none;
 	color: white;
 	cursor: pointer;
 }
 
+#filter-path a:hover,
 .info-value a:hover {
 	background: rgba(255, 255, 255, 0.5);
 }

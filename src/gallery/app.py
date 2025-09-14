@@ -98,7 +98,7 @@ def createApp(
             rows = rows.filter(
                 MediaPath.path.like(pathFilter)
             )
-        return rows.order_by(MediaPath.path).all()
+        return rows.order_by(Media.datetime).all()
 
     app.config['thumbnailDir'] = thumbnailFolder
     app.config['configDir'] = configFolder
@@ -227,13 +227,6 @@ def createApp(
             "success": True,
             "msg": f"Rotated {hash} {direction}"
         })
-
-    @app.route(
-        '/api/filter/path/<path:path>'
-    )
-    def getFromPath(path):
-        Media.query.filter(MediaPath.path.like(f'{path}%')).all()
-        return cachedResp()
 
     @app.route('/addTag')
     def addTag():
