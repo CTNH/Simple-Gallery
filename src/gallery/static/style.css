@@ -227,6 +227,10 @@ body {
 		right: 362px;
 	}
 
+	.lightbox.info-open .lightbox-close {
+		right: 370px;
+	}
+
 	.info-panel {
 		position: fixed;
 		top: 0;
@@ -448,3 +452,69 @@ body {
 		text-align: left;
 	}
 }
+
+.tag-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(100, 100, 100, 0.45);
+	z-index: 1000;
+	align-items: center;
+	transition: all 0.3s ease;
+	display: none;
+	justify-content: center;
+}
+
+.tag-prompt {
+	display: block;
+	flex-direction: column;
+	max-width: 100%;
+	width: 480px;
+	background: rgba(40, 40, 40, 1);
+	position: relative;
+	border-radius: 8px;
+	margin: 10px;
+	z-index: 1100;
+}
+
+.tag-info {
+	padding: 10px;
+	margin:5px;
+}
+
+.tag-info input {
+	width: 100%;
+	padding: 8px;
+	border: 1px solid rgba(255,255,255, 0.6);
+	border-radius: 4px;
+	background-color: initial;
+	outline: none;
+	color: white;
+}
+
+.tag-action {
+	width: 100%;
+	background: rgb(70, 70, 70);
+	justify-content: right;
+	display: flex;
+	border-radius: 0 0 8px 8px;
+}
+
+.tag-action button {
+	background: rgb(70, 70, 70);
+	color: white;
+	border: none;
+	padding: 10px;
+	margin: 5px;
+	cursor: pointer;
+	border-radius: 5px;
+	transition: background 0.2s;
+}
+
+.tag-action button:hover {
+	background: rgba(255, 255, 255, 0.2);
+	background: rgba(0,0,0, 0.2);
+}
+

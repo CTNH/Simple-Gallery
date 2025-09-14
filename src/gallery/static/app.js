@@ -412,10 +412,23 @@ function handleResize() {
 	}, 350);
 }
 
+function openTagOverlay() {
+	document.getElementById('tag-overlay').style.display = 'flex';
+}
+function closeTagOverlay() {
+	document.getElementById('tag-overlay').style.display = 'none';
+}
+
+
 // Close lightbox by clicking outside the image
 document.getElementById('lightbox-media-container').addEventListener('click', (e) => {
 	if (e.target.id === 'lightbox-media-container') {
 		closeLightbox();
+	}
+});
+document.getElementById('tag-overlay').addEventListener('click', (e) => {
+	if (e.target.id === 'tag-overlay') {
+		closeTagOverlay();
 	}
 });
 
