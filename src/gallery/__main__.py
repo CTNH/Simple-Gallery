@@ -1,7 +1,7 @@
 from pathlib import Path
 from os import fspath
 from os.path import join as pathJoin
-from os.path import dirname, exists, isabs, normpath
+from os.path import dirname, exists, isabs, normpath, abspath
 from media.metadataExtract import MetaExtract
 from media.thumbnails import ImgThumbnail, VidThumbnail
 from media.mediatype import MediaType, GetMediaType
@@ -81,7 +81,7 @@ def initialize(config: dict):
         metadataList.append(defaultdict(lambda: None, metadata))
 
     initDB(
-        dbPath=pathJoin(DATA_PATH, DATABASE_NAME),
+        dbPath=pathJoin(abspath(DATA_PATH), DATABASE_NAME),
         data=metadataList,
         commitBatchSize=config["database"]["commit_batch_size"]
     )
@@ -100,10 +100,12 @@ def server(config: dict):
     thumbnailsFolder = pathJoin(config["paths"]["data"], "thumbnails")
     # Set to absolute path if is relative
     if not isabs(thumbnailsFolder):
-        thumbnailsFolder = pathJoin(config['config_dir'], thumbnailsFolder)
+        thumbnailsFolder = pathJoin(
+            abspath(config['config_dir']), thumbnailsFolder
+        )
 
     createApp(
-        mediaFolder=thumbnailsFolder,
+        thumbnailFolder=thumbnailsFolder,
         configFolder=config['config_dir'],
         dbPath=dbPath,
         thumbnailSize=min(config["media"]["thumbnail_size"])
