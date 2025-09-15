@@ -601,12 +601,17 @@ const lightboxVid = document.getElementById('lightbox-vid');
 document.addEventListener('keydown', (e) => {
 	if (selectMode) {
 		switch (e.key) {
-			case 'Escape':
 			case 's':
+				// Ignore if typing in input
+				if (e.target.tagName === 'INPUT')
+					break;
+			case 'Escape':
 				toggleSelectionMode();
 				selectModeCheckbox.checked = false;
 				break;
 			case 'a':
+				if (e.target.tagName === 'INPUT')
+					break;
 				break;
 		}
 		return;

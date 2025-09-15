@@ -3,6 +3,7 @@ from flask import Response, make_response, jsonify, request as frequest
 from os.path import isabs, join as pathJoin, exists, basename, abspath
 from gallery.extensions import db
 from gallery.models import Media, MediaPath, MediaTag
+from sqlalchemy import distinct
 
 app = Flask(__name__)
 
@@ -248,28 +249,21 @@ def createApp(
     @app.route('/api/tags', methods=['GET'])
     def getTags():
         hashFilter = frequest.args.get('hash', default=None)
+        rows = []
         if hashFilter is None:
-            rows = MediaTag.query.all()
-            tags = []
-            for row in rows:
-                tags.append({
-                    'hash': row.hash,
-                    'tag': row.tag
-                })
-            return jsonify({
-                'success': True,
-                'data': tags
-            })
+            # Get names of all tags
+            rows = db.session.query(distinct(MediaTag.tag)).all()
+        else:
+            rows = (
+                MediaTag.query
+                .with_entities(MediaTag.tag)
+                .filter_by(hash=hashFilter)
+                .all()
+            )
 
-        hashTags = [tag for (tag,) in (
-            MediaTag.query
-            .with_entities(MediaTag.tag)
-            .filter_by(hash=hashFilter)
-            .all()
-        )]
         return jsonify({
             'success': True,
-            'data': hashTags
+            'data': [tag for (tag,) in rows]
         })
 
     @app.route('/api/tags', methods=['POST'])
