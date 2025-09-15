@@ -26,7 +26,7 @@ async function loadMedia() {
 	loadMediaByFilter();
 }
 
-async function loadMediaByFilter(path = '/') {
+async function loadMediaByFilter({path = null, tags = []} = {}) {
 	selectedItems = new Set();
 	updateSelectModeMediaCount();
 	selectModeCheckbox.checked = false;
@@ -35,9 +35,20 @@ async function loadMediaByFilter(path = '/') {
 
 	try {
 		let apiEndpoint = '/api/media';
-		if (path !== '/') {
-			apiEndpoint += '?path=' + path;
+
+		let queryparam = [];
+		if (path !== null) {
+			queryparam.push("path="+path);
 		}
+		if (tags !== []) {
+			for (const tag of tags) {
+				queryparam.push("tag="+tag);
+			}
+		}
+		if (queryparam.length > 0) {
+			apiEndpoint += "?" + queryparam.join('&');
+		}
+
 		let response = await fetch(apiEndpoint);
 		allMedia = await response.json();
 
@@ -57,12 +68,15 @@ async function loadMediaByFilter(path = '/') {
 }
 
 function createPathButtons(path) {
+	if (path == null) {
+		path = '/';
+	}
 	let cumPath = '';
-	let pathButtons = `<a onclick="loadMediaByFilter('/')" title="Show all media">ALL</a>/`;
+	let pathButtons = `<a onclick="loadMediaByFilter({path:null});" title="Show all media">ALL</a>/`;
 	if (path !== '/') {
 		path.split('/').slice(0, -1).forEach(segment => {
 			cumPath += segment + "/";
-			pathButtons += `<a onclick="loadMediaByFilter('${cumPath}')" title="Show only media in '${cumPath}'">${segment}</a>/`;
+			pathButtons += `<a onclick="loadMediaByFilter({path:'${cumPath}'})" title="Show only media in '${cumPath}'">${segment}</a>/`;
 		});
 	}
 	return pathButtons;
@@ -81,13 +95,13 @@ async function createInfoTagButtons(hash) {
 		allTags[hash] = resp['data'];
 	}
 
-	if (allTags[hash] == []) {
+	if (allTags[hash].length == 0) {
 		return 'None';
 	}
 
 	let tagButtons = '';
 	for (const tag of allTags[hash]) {
-		tagButtons += `<a>${tag}</a>`;
+		tagButtons += `<a onclick="loadMediaByFilter({tags:['${tag}']})">${tag}</a>`;
 	}
 	return tagButtons;
 }

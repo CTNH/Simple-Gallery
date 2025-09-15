@@ -83,7 +83,7 @@ def createApp(
             f'{hash[4:]}-{thumbnailSize}.jpg'
         )
 
-    def getMediaInfo(pathFilter: str = None):
+    def getMediaInfo(pathFilter: str = None, tagsFilter: list = None):
         rows = db.session.query(
             Media.hash,
             MediaPath.path,
@@ -95,10 +95,19 @@ def createApp(
             Media.height,
             Media.size
         ).join(MediaPath.media)
+
         if pathFilter is not None:
             rows = rows.filter(
                 MediaPath.path.like(pathFilter)
             )
+
+        if tagsFilter is not None and len(tagsFilter) > 0:
+            rows = (
+                rows
+                .join(MediaTag, Media.hash == MediaTag.hash)
+                .filter(MediaTag.tag.in_(tagsFilter))
+            )
+
         return rows.order_by(Media.datetime).all()
 
     app.config['thumbnailDir'] = thumbnailFolder
@@ -149,12 +158,17 @@ def createApp(
     def get_mediaInfo():
         """API endpoint to get all images with their aspect ratios"""
         pathFilter = frequest.args.get('path', default=None)
-        if pathFilter is None:
-            return jsonify(app.config['mediaInfo'])
+        tagsFilter = frequest.args.getlist('tag')
+
+        if pathFilter is not None:
+            pathFilter = f"{pathFilter}%"
 
         with app.app_context():
             # Get media list from database
-            rows = getMediaInfo(f"{pathFilter}%")
+            rows = getMediaInfo(
+                pathFilter=pathFilter,
+                tagsFilter=tagsFilter
+            )
 
             mediaInfo = []
             for row in rows:
@@ -234,7 +248,6 @@ def createApp(
     @app.route('/api/tags', methods=['GET'])
     def getTags():
         hashFilter = frequest.args.get('hash', default=None)
-        print(f"GET tag {hashFilter}")
         if hashFilter is None:
             rows = MediaTag.query.all()
             tags = []
