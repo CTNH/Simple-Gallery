@@ -268,7 +268,6 @@ body {
 
 	#lightbox-media-container {
 		flex: 0 0 auto;
-		//height: 100vh;
 		min-height: 400px;
 		display: flex;
 	}
@@ -554,7 +553,6 @@ body {
 }
 
 .select-mode-checkbox:checked + label .select-mode-text {
-	background-color: #2d6737;
 	background: rgba(164, 70, 240, 1);
 	color: white;
 	box-shadow: rgba(0, 0, 0, 0.25) 0px -4px 1px 0px inset
@@ -562,16 +560,11 @@ body {
 
 .selection-checkbox {
 	position: absolute;
-	top: 8px;
-	left: 8px;
-	width: 24px;
-	height: 24px;
 	top: 0px;
 	left: 0px;
 	width: 100%;
 	height: 100%;
 	border: 1px solid rgba(255, 255, 255, 0.7);
-	//background: rgba(0, 0, 0, 0.5);
 	background: none;
 	cursor: pointer;
 	display: none;
@@ -584,5 +577,38 @@ body {
 .selection-checkbox.selected {
 	background-color: rgba(150, 25, 245, 0.15);
 	border: 3px solid rgba(150, 25, 245, 1);
+}
+
+.select-mode-info-bar {
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	display: none;
+	background: rgb(40, 40, 40);
+	align-items: center;
+	justify-content: space-between;
+	padding-left: 12px;
+	border: 3px solid rgba(164, 70, 240, 1);
+	border-top: none;
+	border-radius: 0 0 1em 1em;
+}
+
+.select-mode-info {
+	margin: 8px;
+}
+
+.select-mode-info-buttons {
+	display: flex;
+	padding-right: 12px;
+}
+
+.select-mode-info button {
+	background: rgb(60, 60, 60);
+	font: inherit;
+	color: white;
+	padding: 10px;
+	border: none;
+	border-radius: 1em;
 }
 

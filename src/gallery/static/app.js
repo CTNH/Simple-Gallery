@@ -9,6 +9,9 @@ let infoPanelOpen = false;
 
 let selectMode = false;
 let selectedItems = new Set();
+let lastSelected = null;
+let mouseDown = false;
+let checkSelect = true;
 
 let cssRules = {};
 const sheet = document.styleSheets[0].cssRules;
@@ -24,6 +27,7 @@ async function loadMedia() {
 
 async function loadMediaByFilter(path = '/') {
 	selectedItems = new Set();
+	updateSelectModeMediaCount();
 	selectModeCheckbox.checked = false;
 	selectMode = true;
 	toggleSelectionMode();
@@ -291,7 +295,7 @@ function updateInfoPanel() {
 			["Dimensions", (media.width || '?') + ' x ' + (media.height || '?')],
 			["Aspect Ratio", media.aspectRatio ? media.aspectRatio.toFixed(2) : 'Unknown'],
 			["Duration", (media.video && media.duration) ? media.duration : '-'],
-			["Rotation", media.rotation],
+			["Rotation", (media.rotation || 0) + '&deg;'],
 			["Path", createPathButtons(media.path) || 'Unknown']
 		])],
 		["Technical Details", new Map([
@@ -354,6 +358,11 @@ function toggleMediaSelection(e, mediaIdx) {
 		selectedItems.add(mediaIdx);
 		e.target.classList.add('selected');
 	}
+	updateSelectModeMediaCount();
+}
+
+function updateSelectModeMediaCount() {
+	document.getElementById('select-mode-media-count').innerText = selectedItems.size;
 }
 
 function renderGallery() {
@@ -389,11 +398,24 @@ function renderGallery() {
 			container.appendChild(imgElement);
 
 			const checkbox = document.createElement('div');
+			checkbox.checked = false;
 			checkbox.className = 'selection-checkbox';
 			if (selectedItems.has(img.idx)) {
 				checkbox.classList.add('selected');
 			}
-			checkbox.addEventListener('click', (e) => toggleMediaSelection(e, img.idx));
+			checkbox.addEventListener('mousedown', function(e) {
+				this.checked = !this.checked;
+				checkSelect = this.checked;
+				// Prevents default click toggle behavior to avoid double toggling
+				event.preventDefault(); 
+				toggleMediaSelection(e, img.idx);
+			});
+			checkbox.addEventListener('mouseenter', function(e) {
+				if (mouseDown && (this.checked !== checkSelect)) {
+					this.checked = !this.checked;
+					toggleMediaSelection(e, img.idx);
+				}
+			});
 			container.appendChild(checkbox);
 
 			if (img.video === true && img.duration) {
@@ -461,12 +483,15 @@ document.getElementById('tag-overlay').addEventListener('click', (e) => {
 	}
 });
 function toggleSelectionMode() {
+	const selectModeBar = document.getElementById('select-mode-info-bar');
 	if (selectMode) {
 		selectMode = false;
+		selectModeBar.style.display = 'none';
 		cssRules['.selection-checkbox'].style.display = 'none';
 	}
 	else {
 		selectMode = true;
+		selectModeBar.style.display = 'flex';
 		cssRules['.selection-checkbox'].style.display = 'flex';
 	}
 }
@@ -531,6 +556,25 @@ document.addEventListener('keydown', (e) => {
 			break;
 	}
 });
+
+document.body.addEventListener('mousedown', () => {
+	mouseDown = true;
+});
+
+document.body.addEventListener('mouseup', () => {
+	mouseDown = false;
+});
+document.documentElement.addEventListener('mouseleave', (event) => {
+	if (
+		event.clientY <= 0 ||
+		event.clientX <= 0 ||
+		event.clientX >= window.innerWidth ||
+		event.clientY >= window.innerHeight
+	) {
+		mouseDown = false;
+	}
+});
+
 
 // Event listeners
 window.addEventListener('resize', () => {

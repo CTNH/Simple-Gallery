@@ -19,14 +19,32 @@
 	</div>
 
 	<!-- Select Mode -->
+	<div class="select-mode-info-bar" id="select-mode-info-bar">
+		<div class="select-mode-info">
+			Selected <span id="select-mode-media-count">0</span> items
+		</div>
+		<div class="select-mode-info-buttons">
+			<div class="select-mode-info">
+				<button>Deselect All</button>
+			</div>
+			<div class="select-mode-info">
+				<button>Select All</button>
+			</div>
+			<div class="select-mode-info">
+				<button>Tag Selected</button>
+			</div>
+		</div>
+	</div>
+
 	<div class="select-mode-button">
 		<input type="checkbox" id="select-mode-checkbox" class="select-mode-checkbox">
 		<label for="select-mode-checkbox">
 			<div class="select-mode-text">Select Mode</div>
 		</label>
 	</div>
+	
 
-	<!-- Tag -->
+	<!-- Tag Prompt -->
 	<div class="tag-overlay" id="tag-overlay">>
 		<div class="tag-prompt">
 			<div class="tag-info">
@@ -44,7 +62,7 @@
 
 	<!-- Lightbox -->
 	<div class="lightbox" id="lightbox">
-		<button class="lightbox-close" onclick="closeLightbox()">&times</button>
+		<button class="lightbox-close" onclick="closeLightbox()">&times;</button>
 
 		<button class="lightbox-nav lightbox-prev" onclick="prevMedia()">‹</button>
 		<button class="lightbox-nav lightbox-next" onclick="nextMedia()">›</button>
