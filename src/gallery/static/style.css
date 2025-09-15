@@ -415,6 +415,13 @@ body {
 	text-decoration: none;
 	color: white;
 	cursor: pointer;
+	background: rgba(255, 255, 255, 0.2);
+	margin: 2px;
+	padding: 4px;
+	padding-top: 2px;
+	padding-bottom: 2px;
+	line-height: 25px;
+	border-radius: 4px;
 }
 
 #filter-path a:hover,

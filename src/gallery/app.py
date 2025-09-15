@@ -231,6 +231,34 @@ def createApp(
             "msg": f"Rotated {hash} {direction}"
         })
 
+    @app.route('/api/tags', methods=['GET'])
+    def getTags():
+        hashFilter = frequest.args.get('hash', default=None)
+        print(f"GET tag {hashFilter}")
+        if hashFilter is None:
+            rows = MediaTag.query.all()
+            tags = []
+            for row in rows:
+                tags.append({
+                    'hash': row.hash,
+                    'tag': row.tag
+                })
+            return jsonify({
+                'success': True,
+                'data': tags
+            })
+
+        hashTags = [tag for (tag,) in (
+            MediaTag.query
+            .with_entities(MediaTag.tag)
+            .filter_by(hash=hashFilter)
+            .all()
+        )]
+        return jsonify({
+            'success': True,
+            'data': hashTags
+        })
+
     @app.route('/api/tags', methods=['POST'])
     def addTag():
         data = frequest.get_json()
@@ -242,10 +270,14 @@ def createApp(
 
         tags = data.get('tag', [])
         hashes = data.get('hashes', [])
-        app.config['mediaPath'] = MediaTag.query.all()
         rows = []
         for tag in tags:
-            mediaWithTag = MediaTag.query.with_entities(MediaTag.hash).filter_by(tag=tag).all()
+            mediaWithTag = (
+                MediaTag.query
+                .with_entities(MediaTag.hash)
+                .filter_by(tag=tag)
+                .all()
+            )
             mediaWithTag = [m for (m,) in mediaWithTag]
             for hash in hashes:
                 if hash in mediaWithTag:

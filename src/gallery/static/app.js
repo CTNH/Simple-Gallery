@@ -1,4 +1,5 @@
 let allMedia = [];
+let allTags = {};
 let galleryContainer = document.getElementById('gallery');
 let statsElement = document.getElementById('stats');
 const selectModeCheckbox = document.getElementById('select-mode-checkbox');
@@ -37,7 +38,7 @@ async function loadMediaByFilter(path = '/') {
 		if (path !== '/') {
 			apiEndpoint += '?path=' + path;
 		}
-		const response = await fetch(apiEndpoint);
+		let response = await fetch(apiEndpoint);
 		allMedia = await response.json();
 
 		if (allMedia.length === 0) {
@@ -65,6 +66,30 @@ function createPathButtons(path) {
 		});
 	}
 	return pathButtons;
+}
+
+async function createInfoTagButtons(hash) {
+	if (!(hash in allTags)) {
+		let resp = await fetch('/api/tags?hash=' + hash);
+		resp = await resp.json();
+
+		if (!resp['success']) {
+			console.error("Failed to get tags data.")
+			return '';
+		}
+
+		allTags[hash] = resp['data'];
+	}
+
+	if (allTags[hash] == []) {
+		return 'None';
+	}
+
+	let tagButtons = '';
+	for (const tag of allTags[hash]) {
+		tagButtons += `<a>${tag}</a>`;
+	}
+	return tagButtons;
 }
 
 function updateStats() {
@@ -153,7 +178,7 @@ function calculateRows(viewWidth, mediaInfo) {
 	return rows;
 }
 
-function openLightbox(idx) {
+async function openLightbox(idx) {
 	currMediaIdx = idx;
 	const lightboxImg = document.getElementById('lightbox-img');
 	const lightboxVid = document.getElementById('lightbox-vid');
@@ -178,7 +203,7 @@ function openLightbox(idx) {
 
 	// Update info panel if it's open
 	if (infoPanelOpen) {
-		updateInfoPanel();
+		await updateInfoPanel();
 		document.getElementById('info-panel').classList.add('active');
 	}
 
@@ -216,31 +241,31 @@ function closeLightbox() {
 	document.body.style.overflow = '';
 }
 
-function nextMedia() {
+async function nextMedia() {
 	document.getElementById('lightbox-vid').src = "";
 	currMediaIdx = (currMediaIdx + 1) % allMedia.length;
-	openLightbox(currMediaIdx);
+	await openLightbox(currMediaIdx);
 }
 
-function prevMedia() {
+async function prevMedia() {
 	document.getElementById('lightbox-vid').src = "";
 	currMediaIdx = (currMediaIdx - 1 + allMedia.length) % allMedia.length;
-	openLightbox(currMediaIdx);
+	await openLightbox(currMediaIdx);
 }
 
-function toggleInfoPanel() {
+async function toggleInfoPanel() {
 	const infoButton = document.getElementById('info-button');
 
 	if (infoPanelOpen) {
 		closeInfoPanel();
 		infoButton.classList.remove('active');
 	} else {
-		openInfoPanel();
+		await openInfoPanel();
 		infoButton.classList.add('active');
 	}
 }
 
-function openInfoPanel() {
+async function openInfoPanel() {
 	const infoPanel = document.getElementById('info-panel');
 	const lightboxContent = document.querySelector('.lightbox');
 
@@ -248,7 +273,7 @@ function openInfoPanel() {
 	infoPanel.classList.add('active');
 	lightboxContent.classList.add('info-open');
 	rotateLightboxImg();
-	updateInfoPanel();
+	await updateInfoPanel();
 }
 
 function closeInfoPanel() {
@@ -266,7 +291,7 @@ function isMobile() {
 	return window.innerWidth <= 768;
 }
 
-function updateInfoPanel() {
+async function updateInfoPanel() {
 	if (!infoPanelOpen || currMediaIdx >= allMedia.length) return;
 
 	const media = allMedia[currMediaIdx];
@@ -305,7 +330,8 @@ function updateInfoPanel() {
 		])],
 		["Gallery Info", new Map([
 			["Index", (currMediaIdx + 1) + ' of '  + allMedia.length],
-			["Display Size", Math.round(media.width || 0) + ' x ' + Math.round(media.height || 0)]
+			["Display Size", Math.round(media.width || 0) + ' x ' + Math.round(media.height || 0)],
+			["Tags", await createInfoTagButtons(media.hash)],
 		])]
 	]);
 	infoContent.innerHTML = "";
@@ -346,7 +372,7 @@ async function rotate(deg) {
 
 	// Update info panel if it's open
 	if (infoPanelOpen) {
-		updateInfoPanel();
+		await updateInfoPanel();
 	}
 }
 
@@ -499,7 +525,11 @@ async function addTag() {
 		}
 
 		const resp = await response.json();
-		console.log(resp);
+		if (resp['success']) {
+			closeTagPrompt();
+			return;
+		}
+		// TODO Show error message to user
 
 	} catch (error) {
 		console.error("Error sending data: ", error)
@@ -514,7 +544,7 @@ document.getElementById('lightbox-media-container').addEventListener('click', (e
 });
 document.getElementById('tag-overlay').addEventListener('click', (e) => {
 	if (e.target.id === 'tag-overlay') {
-		closeTagOverlay();
+		closeTagPrompt();
 	}
 });
 function toggleSelectionMode() {
