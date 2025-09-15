@@ -610,5 +610,6 @@ body {
 	padding: 10px;
 	border: none;
 	border-radius: 1em;
+	cursor: pointer;
 }
 

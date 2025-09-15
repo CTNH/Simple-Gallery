@@ -2,7 +2,7 @@ from flask import Flask, render_template, send_from_directory, send_file, abort
 from flask import Response, make_response, jsonify, request as frequest
 from os.path import isabs, join as pathJoin, exists, basename, abspath
 from gallery.extensions import db
-from gallery.models import Media, MediaPath
+from gallery.models import Media, MediaPath, MediaTag
 
 app = Flask(__name__)
 
@@ -231,8 +231,34 @@ def createApp(
             "msg": f"Rotated {hash} {direction}"
         })
 
-    @app.route('/addTag')
+    @app.route('/api/tags', methods=['POST'])
     def addTag():
-        pass
+        data = frequest.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No JSON data received'
+            }), 400
+
+        tags = data.get('tag', [])
+        hashes = data.get('hashes', [])
+        app.config['mediaPath'] = MediaTag.query.all()
+        rows = []
+        for tag in tags:
+            mediaWithTag = MediaTag.query.with_entities(MediaTag.hash).filter_by(tag=tag).all()
+            mediaWithTag = [m for (m,) in mediaWithTag]
+            for hash in hashes:
+                if hash in mediaWithTag:
+                    continue
+                rows.append(MediaTag(
+                    hash=hash,
+                    tag=tag
+                ))
+        db.session.add_all(rows)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+        }), 200
 
     return app

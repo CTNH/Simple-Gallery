@@ -464,11 +464,46 @@ function handleResize() {
 	}, 350);
 }
 
-function openTagOverlay() {
+function openTagPrompt() {
 	document.getElementById('tag-overlay').style.display = 'flex';
 }
-function closeTagOverlay() {
+function closeTagPrompt() {
 	document.getElementById('tag-overlay').style.display = 'none';
+}
+
+async function addTag() {
+	selectedItems;
+	let data = {
+		'tag': [],
+		'hashes': []
+	};
+
+	for (const t of document.getElementById('tag-input').value.split(' ')) {
+		data['tag'].push(t)
+	}
+	for (const idx of selectedItems) {
+		data['hashes'].push(allMedia[idx].hash);
+	}
+
+	try {
+		const response = await fetch('/api/tags', {
+			method: 'POST',
+			headers: {
+				'Content-Type': "application/json",
+			},
+			body: JSON.stringify(data),
+		});
+
+		if (!response.ok) {
+			throw new Error(`Server error: ${response.status}`);
+		}
+
+		const resp = await response.json();
+		console.log(resp);
+
+	} catch (error) {
+		console.error("Error sending data: ", error)
+	}
 }
 
 // Close lightbox by clicking outside the image

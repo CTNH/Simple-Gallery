@@ -31,7 +31,7 @@
 				<button>Select All</button>
 			</div>
 			<div class="select-mode-info">
-				<button>Tag Selected</button>
+				<button onclick='openTagPrompt()'>Tag Selected</button>
 			</div>
 		</div>
 	</div>
@@ -45,17 +45,17 @@
 	
 
 	<!-- Tag Prompt -->
-	<div class="tag-overlay" id="tag-overlay">>
+	<div class="tag-overlay" id="tag-overlay">
 		<div class="tag-prompt">
 			<div class="tag-info">
 				<h3>Add Tags</h3>
 			</div>
 			<div class="tag-info">
-				<input placeholder="Tag name">
+				<input id='tag-input' placeholder="Tag name">
 			</div>
 			<div class="tag-action">
-				<button onclick="closeTagOverlay()">Cancel</button>
-				<button>Confirm</button>
+				<button onclick="closeTagPrompt()">Cancel</button>
+				<button onclick="addTag()">Confirm</button>
 			</div>
 		</div>
 	</div>

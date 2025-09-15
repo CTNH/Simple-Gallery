@@ -34,3 +34,9 @@ class MediaPath(db.Model):
     hash = db.Column(db.String, db.ForeignKey('media.hash'), nullable=False)
     # Bidirectional access
     media = db.relationship('Media', backref=db.backref('media_paths', lazy=True))
+
+
+class MediaTag(db.Model):
+    __table_name__ = 'media_tag'
+    hash = db.Column(db.String, db.ForeignKey('media.hash'), primary_key=True)
+    tag = db.Column(db.String, primary_key=True)
