@@ -1,10 +1,21 @@
 let allMedia = [];
 let galleryContainer = document.getElementById('gallery');
 let statsElement = document.getElementById('stats');
+const selectModeCheckbox = document.getElementById('select-mode-checkbox');
 let observer;
 let currMediaIdx = 0;
 let lastWinWidth = window.innerWidth;
 let infoPanelOpen = false;
+
+let selectMode = false;
+let selectedItems = new Set();
+
+let cssRules = {};
+const sheet = document.styleSheets[0].cssRules;
+for (let i = 0; i < sheet.length; i++) {
+	cssRules[sheet[i].selectorText] = sheet[i];
+}
+
 
 // Fetch images from API
 async function loadMedia() {
@@ -12,6 +23,11 @@ async function loadMedia() {
 }
 
 async function loadMediaByFilter(path = '/') {
+	selectedItems = new Set();
+	selectModeCheckbox.checked = false;
+	selectMode = true;
+	toggleSelectionMode();
+
 	try {
 		let apiEndpoint = '/api/media';
 		if (path !== '/') {
@@ -140,9 +156,6 @@ function openLightbox(idx) {
 
 	document.getElementById('lightbox').classList.add('active');
 	document.getElementById('lightbox-button-row').style.display = 'flex';
-	document.querySelectorAll('.lightbox-nav').forEach((elem) => {
-		elem.style.display = '';
-	});
 
 	if (allMedia[idx].video === false) {
 		rotateLightboxImg();
@@ -333,6 +346,16 @@ async function rotate(deg) {
 	}
 }
 
+function toggleMediaSelection(e, mediaIdx) {
+	if (selectedItems.has(mediaIdx)) {
+		selectedItems.delete(mediaIdx);
+		e.target.classList.remove('selected');
+	} else {
+		selectedItems.add(mediaIdx);
+		e.target.classList.add('selected');
+	}
+}
+
 function renderGallery() {
 	const viewWidth = window.innerWidth - 16; // Account for padding
 	const rows = calculateRows(viewWidth, allMedia);
@@ -363,8 +386,15 @@ function renderGallery() {
 			imgElement.loading = 'lazy'; // Works as fallback
 
 			imgElement.addEventListener('click', () => openLightbox(img.idx));
-
 			container.appendChild(imgElement);
+
+			const checkbox = document.createElement('div');
+			checkbox.className = 'selection-checkbox';
+			if (selectedItems.has(img.idx)) {
+				checkbox.classList.add('selected');
+			}
+			checkbox.addEventListener('click', (e) => toggleMediaSelection(e, img.idx));
+			container.appendChild(checkbox);
 
 			if (img.video === true && img.duration) {
 				const durationDiv = document.createElement('div');
@@ -419,7 +449,6 @@ function closeTagOverlay() {
 	document.getElementById('tag-overlay').style.display = 'none';
 }
 
-
 // Close lightbox by clicking outside the image
 document.getElementById('lightbox-media-container').addEventListener('click', (e) => {
 	if (e.target.id === 'lightbox-media-container') {
@@ -430,6 +459,19 @@ document.getElementById('tag-overlay').addEventListener('click', (e) => {
 	if (e.target.id === 'tag-overlay') {
 		closeTagOverlay();
 	}
+});
+function toggleSelectionMode() {
+	if (selectMode) {
+		selectMode = false;
+		cssRules['.selection-checkbox'].style.display = 'none';
+	}
+	else {
+		selectMode = true;
+		cssRules['.selection-checkbox'].style.display = 'flex';
+	}
+}
+selectModeCheckbox.addEventListener('change', function() {
+	toggleSelectionMode();
 });
 
 const lightboxVid = document.getElementById('lightbox-vid');
@@ -453,6 +495,18 @@ const lightboxVid = document.getElementById('lightbox-vid');
 );
 
 document.addEventListener('keydown', (e) => {
+	if (selectMode) {
+		switch (e.key) {
+			case 'Escape':
+			case 's':
+				toggleSelectionMode();
+				selectModeCheckbox.checked = false;
+				break;
+			case 'a':
+				break;
+		}
+		return;
+	}
 	switch (e.key) {
 		case 'Escape':
 			closeLightbox();
@@ -468,6 +522,10 @@ document.addEventListener('keydown', (e) => {
 			if (document.getElementById('lightbox').classList.contains('active')) {
 				toggleInfoPanel();
 			}
+			break;
+		case 's':
+			selectModeCheckbox.checked = true;
+			toggleSelectionMode();
 			break;
 		default:
 			break;
