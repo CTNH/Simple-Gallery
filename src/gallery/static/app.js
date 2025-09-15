@@ -559,6 +559,26 @@ async function addTag() {
 	}
 }
 
+function selectModeSelectAll() {
+	for (let i=0; i<allMedia.length; i++) {
+		selectedItems.add(i);
+	}
+	document.querySelectorAll('.selection-checkbox').forEach(e => {
+		e.classList.add('selected');
+	});
+	updateSelectModeMediaCount();
+}
+
+function selectModeDeselectAll() {
+	for (let i=0; i<allMedia.length; i++) {
+		selectedItems.delete(i);
+	}
+	document.querySelectorAll('.selection-checkbox').forEach(e => {
+		e.classList.remove('selected');
+	});
+	updateSelectModeMediaCount();
+}
+
 // Close lightbox by clicking outside the image
 document.getElementById('lightbox-media-container').addEventListener('click', (e) => {
 	if (e.target.id === 'lightbox-media-container') {
