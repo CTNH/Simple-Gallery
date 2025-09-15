@@ -3,7 +3,7 @@ from flask import Response, make_response, jsonify, request as frequest
 from os.path import isabs, join as pathJoin, exists, basename, abspath
 from gallery.extensions import db
 from gallery.models import Media, MediaPath, MediaTag
-from sqlalchemy import distinct
+from sqlalchemy import distinct, func as sqlfunc
 
 app = Flask(__name__)
 
@@ -106,7 +106,15 @@ def createApp(
             rows = (
                 rows
                 .join(MediaTag, Media.hash == MediaTag.hash)
+                # Match ANY tag
                 .filter(MediaTag.tag.in_(tagsFilter))
+                # Match ALL tags
+                .group_by(MediaTag.hash)
+                .having(
+                    sqlfunc.count(
+                        sqlfunc.distinct(MediaTag.tag)
+                    ) == len(tagsFilter)
+                )
             )
 
         return rows.order_by(Media.datetime).all()

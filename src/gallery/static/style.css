@@ -72,11 +72,15 @@ body {
 	color: #ff6b6b;
 }
 
+.filter-tags,
 .header {
 	text-align: center;
 	padding: 20px 0;
 	border-bottom: 1px solid #333;
-	margin-bottom: 20px;
+}
+
+.filter-tags {
+	line-height: 32px;
 }
 
 .header h1 {
@@ -90,6 +94,7 @@ body {
 }
 
 .stats {
+	margin-top: 20px;
 	text-align: center;
 	margin-bottom: 20px;
 	color: #666;
@@ -411,6 +416,7 @@ body {
 }
 
 #filter-path a,
+.filter-tags a,
 .info-value a {
 	text-decoration: none;
 	color: white;
@@ -425,6 +431,7 @@ body {
 }
 
 #filter-path a:hover,
+.filter-tags a:hover,
 .info-value a:hover {
 	background: rgba(255, 255, 255, 0.5);
 }

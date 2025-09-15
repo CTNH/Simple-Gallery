@@ -57,7 +57,16 @@ async function loadMediaByFilter({path = null, tags = []} = {}) {
 			return;
 		}
 
-		document.getElementById('filter-path').innerHTML = createPathButtons(path);
+		document.getElementById('filter-path').innerHTML = "Path " + createPathButtons(path);
+
+		response = await fetch('/api/tags');
+		tags = await response.json();
+
+		tagButtons = 'All Tags<br>';
+		tags['data'].forEach(tag => {
+			tagButtons += `<a onclick="loadMediaByFilter({tags:['${tag}']})">${tag}</a>`;
+		});
+		document.getElementById('filter-all-tags').innerHTML = tagButtons;
 
 		updateStats();
 		renderGallery();
