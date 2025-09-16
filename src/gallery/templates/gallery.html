@@ -65,8 +65,16 @@
 	<div class="lightbox" id="lightbox">
 		<button class="lightbox-close" onclick="closeLightbox()">&times;</button>
 
-		<button class="lightbox-nav lightbox-prev" onclick="prevMedia()">‹</button>
-		<button class="lightbox-nav lightbox-next" onclick="nextMedia()">›</button>
+		<a onclick="prevMedia()" class="lightbox-nav lightbox-prev" aria-label="Prev" role="button" title="Previous">
+			<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+				<path d="M19.86,2.49A1,1,0,0,0,19,2H10a1,1,0,0,0-.87.51l-5,9s0,.07,0,.11a1.39,1.39,0,0,0-.06.19.91.91,0,0,0,0,.38,1.39,1.39,0,0,0,.06.19s0,.07,0,.11l5,9A1,1,0,0,0,10,22h9a1,1,0,0,0,.86-.49,1,1,0,0,0,0-1L15.14,12l4.73-8.51A1,1,0,0,0,19.86,2.49Z"/>
+			</svg>
+		</a>
+		<a onclick="nextMedia()" class="lightbox-nav lightbox-next" aria-label="Next" role="button" title="Next">
+			<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+				<path d="M19.91,11.62s0-.07,0-.11l-5-9A1,1,0,0,0,14,2H5a1,1,0,0,0-.86.49,1,1,0,0,0,0,1L8.86,12,4.13,20.51a1,1,0,0,0,0,1A1,1,0,0,0,5,22h9a1,1,0,0,0,.87-.51l5-9s0-.07,0-.11a1.39,1.39,0,0,0,.06-.19.91.91,0,0,0,0-.38A1.39,1.39,0,0,0,19.91,11.62Z"/>
+			</svg>
+		</a>
 
 		<div id="lightbox-media-container">
 			<img id="lightbox-img" alt="">
