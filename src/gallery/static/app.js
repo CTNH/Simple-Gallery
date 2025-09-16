@@ -25,20 +25,42 @@ for (let i = 0; i < sheet.length; i++) {
 
 
 // Fetch images from API
-async function loadMedia() {
-	loadMediaByFilter();
+async function loadMedia({pushState = true} = {}) {
+	let path = null;
+	let tags = [];
+	// Parse link filters
+	if (window.location.pathname.startsWith('/search')) {
+		window.location.search.slice(1).split('&').forEach(query => {
+			let [fieldName, fieldVal] = query.split('=');
+			switch (fieldName) {
+				case 'path':
+					path = fieldVal;
+					break;
+
+				case 'tag':
+					tags.push(fieldVal);
+					break;
+
+				default:
+					break;
+			}
+		});
+	}
+
+	loadMediaByFilter({path: path, tags: tags, pushState: pushState});
 }
 
-async function loadMediaByFilter({path = null, tags = []} = {}) {
+
+async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}) {
 	selectedItems = new Set();
 	updateSelectModeMediaCount();
 	selectModeCheckbox.checked = false;
 	selectMode = true;
 	toggleSelectionMode();
 
-	try {
-		let apiEndpoint = '/api/media';
+	closeLightbox();
 
+	try {
 		let queryparam = [];
 		if (path !== null) {
 			queryparam.push("path="+path);
@@ -50,15 +72,24 @@ async function loadMediaByFilter({path = null, tags = []} = {}) {
 		}
 		activeTags = tags;
 
+		let apiEndpoint = '/api/media';
 		if (queryparam.length > 0) {
-			apiEndpoint += "?" + queryparam.join('&');
+			const joinedParams = "?" + queryparam.join('&');
+			apiEndpoint += joinedParams;
+
+			if (pushState) {
+				window.history.pushState({}, '', '/search' + joinedParams);
+			}
+		}
+		else if (pushState) {
+			window.history.pushState({}, '', '/');
 		}
 
 		let response = await fetch(apiEndpoint);
 		allMedia = await response.json();
 
 		if (allMedia.length === 0) {
-			galleryContainer.innerHTML = '<div class="error">No images found. Please add some images to the static/images folder.</div>';
+			galleryContainer.innerHTML = '<div class="error">No images found.</div>';
 			return;
 		}
 
@@ -86,7 +117,7 @@ function createPathButtons(path) {
 		path = '/';
 	}
 	let cumPath = '';
-	let pathButtons = `<a onclick="loadMediaByFilter({path:null});" title="Show all media">ALL</a>/`;
+	let pathButtons = `<a onclick="loadMediaByFilter();" title="Show all media">ALL</a>/`;
 	if (path !== '/') {
 		path.split('/').slice(0, -1).forEach(segment => {
 			cumPath += segment + "/";
@@ -216,14 +247,14 @@ async function openLightbox(idx) {
 
 	if (allMedia[idx].video === false) {
 		rotateLightboxImg();
-		lightboxImg.src = `/files/${allMedia[idx].hash}/original`;
+		lightboxImg.src = `/media/${allMedia[idx].hash}/original`;
 		lightboxImg.alt = allMedia[idx].name;
 
 		lightboxImg.classList.add('active');
 		lightboxVid.classList.remove('active');
 	}
 	else {
-		lightboxVid.src = `/files/${allMedia[idx].hash}/original`;
+		lightboxVid.src = `/media/${allMedia[idx].hash}/original`;
 
 		lightboxVid.classList.add('active');
 		lightboxImg.classList.remove('active');
@@ -445,7 +476,7 @@ function renderGallery() {
 
 			const imgElement = document.createElement('img');
 			// Use data-src for lazy loading, no initial src to prevent eager loading
-			imgElement.dataset.src = '/files/' + img.hash + "/thumbnail";
+			imgElement.dataset.src = '/media/' + img.hash + "/thumbnail";
 			imgElement.className = 'gallery-media';
 			imgElement.style.width = '100%';
 			imgElement.style.height = '100%';
@@ -722,6 +753,13 @@ window.addEventListener('resize', () => {
 });
 
 window.addEventListener('load', loadMedia);
+// Detects backwards and forwards navigation
+window.addEventListener('popstate', function(e) {
+	if (e.state) {
+		loadMedia({pushState: false});
+	}
+});
+
 
 // Load images immediately if DOM is already ready
 if (document.readyState === 'loading') {

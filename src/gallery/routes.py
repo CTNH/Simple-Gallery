@@ -10,7 +10,14 @@ from gallery.media import getMediaInfo
 bp = Blueprint('main_routes', __name__)
 
 
+def cachedResp(resp: Response) -> Response:
+    resp = make_response(resp)
+    resp.headers['Cache-Control'] = 'public, max-age=86400, immutable'
+    return resp
+
+
 @bp.route('/')
+@bp.route('/search')
 def index():
     """Main gallery page"""
     return render_template('gallery.html')
@@ -53,13 +60,7 @@ def get_mediaInfo():
     return jsonify(mediaInfo)
 
 
-def cachedResp(resp: Response) -> Response:
-    resp = make_response(resp)
-    resp.headers['Cache-Control'] = 'public, max-age=86400, immutable'
-    return resp
-
-
-@bp.route('/files/<hash>/thumbnail')
+@bp.route('/media/<hash>/thumbnail')
 def serve_thumbnail(hash):
     if hash not in current_app.config['mediaPath']:
         abort(404)
@@ -69,7 +70,7 @@ def serve_thumbnail(hash):
     ))
 
 
-@bp.route('/files/<hash>/original')
+@bp.route('/media/<hash>/original')
 def serve_originalMedia(hash):
     if hash not in current_app.config['mediaPath']:
         abort(404)
