@@ -1,6 +1,6 @@
 let allMedia = [];
 let allTags = {};
-let activeTags = [];
+const activeTags = new Set();
 let galleryContainer = document.getElementById('gallery');
 let statsElement = document.getElementById('stats');
 const selectModeCheckbox = document.getElementById('select-mode-checkbox');
@@ -50,8 +50,15 @@ async function loadMedia({pushState = true} = {}) {
 	loadMediaByFilter({path: path, tags: tags, pushState: pushState});
 }
 
+async function addFilters({path = null, tags = []}) {
+	tags.forEach(tag => {
+		activeTags.add(tag);
+	});
+	loadMediaByFilter({path: path, tags: Array.from(activeTags)});
+}
 
 async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}) {
+	activeTags.clear();
 	selectedItems = new Set();
 	updateSelectModeMediaCount();
 	selectModeCheckbox.checked = false;
@@ -65,12 +72,11 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 		if (path !== null) {
 			queryparam.push("path="+path);
 		}
-		if (tags !== []) {
-			for (const tag of tags) {
-				queryparam.push("tag="+tag);
-			}
+
+		for (const tag of tags) {
+			queryparam.push("tag="+tag);
+			activeTags.add(tag);
 		}
-		activeTags = tags;
 
 		let apiEndpoint = '/api/media';
 		if (queryparam.length > 0) {
@@ -100,7 +106,7 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 
 		tagButtons = 'All Tags<br>';
 		tags['data'].forEach(tag => {
-			tagButtons += `<a onclick="loadMediaByFilter({tags:['${tag}']})">${tag}</a>`;
+			tagButtons += `<a onclick="addFilters({tags:['${tag}']})">${tag}</a>`;
 		});
 		document.getElementById('filter-all-tags').innerHTML = tagButtons;
 
@@ -146,7 +152,7 @@ async function createInfoTagButtons(hash) {
 
 	let tagButtons = '';
 	for (const tag of allTags[hash]) {
-		tagButtons += `<a onclick="loadMediaByFilter({tags:['${tag}']})">${tag}</a>`;
+		tagButtons += `<a onclick="addFilters({tags:['${tag}']})">${tag}</a>`;
 	}
 	return tagButtons;
 }
@@ -496,8 +502,6 @@ function renderGallery() {
 			checkbox.addEventListener('mousedown', function(e) {
 				this.checked = !this.checked;
 				checkSelect = this.checked;
-				// Prevents default click toggle behavior to avoid double toggling
-				event.preventDefault(); 
 				toggleMediaSelection(e, img.idx);
 			});
 			checkbox.addEventListener('mouseenter', function(e) {
