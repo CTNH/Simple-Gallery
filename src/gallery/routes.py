@@ -6,14 +6,21 @@ from gallery.models import Media, MediaTag
 from gallery.extensions import db
 from sqlalchemy import distinct
 from gallery.media import getMediaInfo
+from functools import wraps
 
 bp = Blueprint('main_routes', __name__)
 
 
-def cachedResp(resp: Response) -> Response:
-    resp = make_response(resp)
-    resp.headers['Cache-Control'] = 'public, max-age=86400, immutable'
-    return resp
+# Decorator for cache control
+def cacheControl(maxAge=86400):
+    def decorator(func):
+        @wraps(func)    # Preserver original function metadata
+        def wrapper(*args, **kwargs):
+            resp = make_response(func(*args, **kwargs))
+            resp.headers['Cache-Control'] = f'public, max-age={maxAge}'
+            return resp
+        return wrapper
+    return decorator
 
 
 @bp.route('/')
@@ -29,6 +36,7 @@ def serve_static(filename):
 
 
 @bp.route('/api/media')
+@cacheControl()
 def get_mediaInfo():
     """API endpoint to get all images with their aspect ratios"""
     pathFilter = frequest.args.get('path', default=None)
@@ -61,16 +69,18 @@ def get_mediaInfo():
 
 
 @bp.route('/media/<hash>/thumbnail')
+@cacheControl()
 def serve_thumbnail(hash):
     if hash not in current_app.config['mediaPath']:
         abort(404)
-    return cachedResp(send_from_directory(
+    return send_from_directory(
         abspath(current_app.config['thumbnailDir']),
         current_app.config['mediaPath'][hash]['thumbnail']
-    ))
+    )
 
 
 @bp.route('/media/<hash>/original')
+@cacheControl()
 def serve_originalMedia(hash):
     if hash not in current_app.config['mediaPath']:
         abort(404)
@@ -83,7 +93,7 @@ def serve_originalMedia(hash):
             current_app.config['configDir'],
             original_path
         )
-    return cachedResp(send_file(original_path))
+    return send_file(original_path)
 
 
 @bp.route(
@@ -125,6 +135,7 @@ def rotateImage(hash, direction):
 
 
 @bp.route('/api/tags', methods=['GET'])
+@cacheControl()
 def getTags():
     hashFilter = frequest.args.get('hash', default=None)
     rows = []
