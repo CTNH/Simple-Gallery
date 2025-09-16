@@ -1,5 +1,6 @@
 let allMedia = [];
 let allTags = {};
+let activeTags = [];
 let galleryContainer = document.getElementById('gallery');
 let statsElement = document.getElementById('stats');
 const selectModeCheckbox = document.getElementById('select-mode-checkbox');
@@ -13,6 +14,8 @@ let selectedItems = new Set();
 let lastSelected = null;
 let mouseDown = false;
 let checkSelect = true;
+
+const lightboxVid = document.getElementById('lightbox-vid');
 
 let cssRules = {};
 const sheet = document.styleSheets[0].cssRules;
@@ -45,6 +48,8 @@ async function loadMediaByFilter({path = null, tags = []} = {}) {
 				queryparam.push("tag="+tag);
 			}
 		}
+		activeTags = tags;
+
 		if (queryparam.length > 0) {
 			apiEndpoint += "?" + queryparam.join('&');
 		}
@@ -256,7 +261,12 @@ function rotateLightboxImg() {
 }
 
 function closeLightbox() {
-	document.getElementById('lightbox-vid').src = "";
+	const lightboxVid = document.getElementById('lightbox-vid');
+	lightboxVid.removeAttribute('src');
+	lightboxVid.load();
+
+	showLightboxButtons();
+
 	document.getElementById('lightbox').classList.remove('active');
 	document.getElementById('info-panel').classList.remove('active');
 
@@ -265,13 +275,13 @@ function closeLightbox() {
 }
 
 async function nextMedia() {
-	document.getElementById('lightbox-vid').src = "";
+	document.getElementById('lightbox-vid').removeAttribute('src');
 	currMediaIdx = (currMediaIdx + 1) % allMedia.length;
 	await openLightbox(currMediaIdx);
 }
 
 async function prevMedia() {
-	document.getElementById('lightbox-vid').src = "";
+	document.getElementById('lightbox-vid').removeAttribute('src');
 	currMediaIdx = (currMediaIdx - 1 + allMedia.length) % allMedia.length;
 	await openLightbox(currMediaIdx);
 }
@@ -514,10 +524,10 @@ function handleResize() {
 }
 
 function openTagPrompt() {
-	document.getElementById('tag-overlay').style.display = 'flex';
+	document.getElementById('tag-overlay').classList.add('active');
 }
 function closeTagPrompt() {
-	document.getElementById('tag-overlay').style.display = 'none';
+	document.getElementById('tag-overlay').classList.remove('active');
 }
 
 async function addTag() {
@@ -594,29 +604,34 @@ function toggleSelectionMode() {
 	const selectModeBar = document.getElementById('select-mode-info-bar');
 	if (selectMode) {
 		selectMode = false;
-		selectModeBar.style.display = 'none';
-		cssRules['.selection-checkbox'].style.display = 'none';
+		selectModeBar.classList.remove('active');
+		cssRules['.selection-checkbox'].style.opacity = 0;
+		cssRules['.selection-checkbox'].style.pointerEvents = 'none';
 	}
 	else {
 		selectMode = true;
-		selectModeBar.style.display = 'flex';
-		cssRules['.selection-checkbox'].style.display = 'flex';
+		selectModeBar.classList.add('active');
+		cssRules['.selection-checkbox'].style.pointerEvents = 'all';
+		cssRules['.selection-checkbox'].style.opacity = 1;
 	}
 }
 selectModeCheckbox.addEventListener('change', function() {
 	toggleSelectionMode();
 });
 
-const lightboxVid = document.getElementById('lightbox-vid');
+function showLightboxButtons() {
+	document.getElementById('lightbox-button-row').style.display = 'flex';
+	document.querySelectorAll('.lightbox-nav').forEach((elem) => {
+		elem.style.display = '';
+	});
+}
+
 ['play', 'pause', 'ended'].forEach(event =>
 	lightboxVid.addEventListener(event, (e) => {
 		const vid = e.target;
 		const buttonRow = document.getElementById('lightbox-button-row');
 		if (vid.paused || vid.ended) {
-			buttonRow.style.display = 'flex';
-			document.querySelectorAll('.lightbox-nav').forEach((elem) => {
-				elem.style.display = '';
-			});
+			showLightboxButtons();
 		}
 		else {
 			buttonRow.style.display = 'none';
@@ -641,6 +656,13 @@ document.addEventListener('keydown', (e) => {
 			case 'a':
 				if (e.target.tagName === 'INPUT')
 					break;
+				// Deslect if all is selected
+				if (selectedItems.size === allMedia.length) {
+					selectModeDeselectAll();
+				}
+				else {
+					selectModeSelectAll();
+				}
 				break;
 		}
 		return;
