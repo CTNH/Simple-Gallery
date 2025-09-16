@@ -15,6 +15,8 @@ let lastSelected = null;
 let mouseDown = false;
 let checkSelect = true;
 
+let currentPath = null;
+
 const lightboxVid = document.getElementById('lightbox-vid');
 
 let cssRules = {};
@@ -50,11 +52,21 @@ async function loadMedia({pushState = true} = {}) {
 	loadMediaByFilter({path: path, tags: tags, pushState: pushState});
 }
 
-async function addFilters({path = null, tags = []}) {
+async function addActiveFilters({tags = []}) {
 	tags.forEach(tag => {
 		activeTags.add(tag);
 	});
-	loadMediaByFilter({path: path, tags: Array.from(activeTags)});
+	loadMediaByFilter({path: currentPath, tags: Array.from(activeTags)});
+}
+
+async function removeActiveFilters({tags = []}) {
+	if (tags.length == 0) {
+		return;
+	}
+	tags.forEach(tag => {
+		activeTags.delete(tag);
+	});
+	loadMediaByFilter({path: currentPath, tags: Array.from(activeTags)});
 }
 
 async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}) {
@@ -66,6 +78,8 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 	toggleSelectionMode();
 
 	closeLightbox();
+
+	currentPath = path;
 
 	try {
 		let queryparam = [];
@@ -94,11 +108,6 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 		let response = await fetch(apiEndpoint);
 		allMedia = await response.json();
 
-		if (allMedia.length === 0) {
-			galleryContainer.innerHTML = '<div class="error">No images found.</div>';
-			return;
-		}
-
 		document.getElementById('filter-path').innerHTML = "Path " + createPathButtons(path);
 
 		response = await fetch('/api/tags');
@@ -106,16 +115,37 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 
 		tagButtons = 'All Tags<br>';
 		tags['data'].forEach(tag => {
-			tagButtons += `<a onclick="addFilters({tags:['${tag}']})">${tag}</a>`;
+			tagButtons += `<a onclick="addActiveFilters({tags:['${tag}']})">${tag}</a>`;
 		});
 		document.getElementById('filter-all-tags').innerHTML = tagButtons;
 
+		tagButtons = 'Active Tags<br>';
+		if (activeTags.size === 0) {
+			tagButtons += "None";
+		}
+		else {
+			activeTags.forEach(tag => {
+				tagButtons += `<a onclick="removeActiveFilters({tags:['${tag}']})">${tag}</a>`;
+			});
+		}
+		document.getElementById('filter-active-tags').innerHTML = tagButtons;
+
 		updateStats();
-		renderGallery();
+
+		if (allMedia.length === 0) {
+			galleryContainer.innerHTML = '<div class="error">No images found.</div>';
+		}
+		else {
+			renderGallery();
+		}
 	} catch (error) {
 		console.error('Error loading images:', error);
 		galleryContainer.innerHTML = '<div class="error">Error loading images. Please check the console for details.</div>';
 	}
+}
+
+function addPathFilter(path) {
+	loadMediaByFilter({path: path, tags: Array.from(activeTags)})
 }
 
 function createPathButtons(path) {
@@ -123,11 +153,11 @@ function createPathButtons(path) {
 		path = '/';
 	}
 	let cumPath = '';
-	let pathButtons = `<a onclick="loadMediaByFilter();" title="Show all media">ALL</a>/`;
+	let pathButtons = `<a onclick="addPathFilter(path=null);" title="Show media with any path">ALL</a>/`;
 	if (path !== '/') {
 		path.split('/').slice(0, -1).forEach(segment => {
 			cumPath += segment + "/";
-			pathButtons += `<a onclick="loadMediaByFilter({path:'${cumPath}'})" title="Show only media in '${cumPath}'">${segment}</a>/`;
+			pathButtons += `<a onclick="addPathFilter(path='${cumPath}')" title="Show only media in '${cumPath}'">${segment}</a>/`;
 		});
 	}
 	return pathButtons;
@@ -152,7 +182,7 @@ async function createInfoTagButtons(hash) {
 
 	let tagButtons = '';
 	for (const tag of allTags[hash]) {
-		tagButtons += `<a onclick="addFilters({tags:['${tag}']})">${tag}</a>`;
+		tagButtons += `<a onclick="addActiveFilters({tags:['${tag}']})">${tag}</a>`;
 	}
 	return tagButtons;
 }
