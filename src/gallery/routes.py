@@ -16,11 +16,6 @@ def index():
     return render_template('gallery.html')
 
 
-@bp.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-
 @bp.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory("static", filename)
@@ -104,10 +99,17 @@ def rotateImage(hash, direction):
         return jsonify({
             "success": False,
             "msg": f"Failed to rotate {hash} {direction}"
-        })
+        }), 400
 
     media.rotation = ((media.rotation or 0) + directions[direction]) % 360
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'msg': e
+        }), 400
 
     # Rotate current session
     for m in current_app.config['mediaInfo']:
@@ -170,7 +172,14 @@ def addTag():
                 tag=tag
             ))
     db.session.add_all(rows)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'msg': e
+        }), 400
 
     return jsonify({
         'success': True,

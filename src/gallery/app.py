@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from os.path import exists, basename
 from gallery.extensions import db
 from gallery.models import Media, MediaPath
@@ -116,5 +116,9 @@ def createApp(
             }
 
     app.register_blueprint(bp)
+
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('404.html'), 404
 
     return app
