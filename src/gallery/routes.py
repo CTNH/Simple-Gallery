@@ -1,0 +1,177 @@
+from flask import Blueprint, render_template, send_from_directory, send_file
+from flask import abort, request as frequest, Response, make_response, jsonify
+from flask import current_app
+from os.path import isabs, join as pathJoin, basename, abspath
+from gallery.models import Media, MediaTag
+from gallery.extensions import db
+from sqlalchemy import distinct
+from gallery.media import getMediaInfo
+
+bp = Blueprint('main_routes', __name__)
+
+
+@bp.route('/')
+def index():
+    """Main gallery page"""
+    return render_template('gallery.html')
+
+
+@bp.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+
+@bp.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory("static", filename)
+
+
+@bp.route('/api/media')
+def get_mediaInfo():
+    """API endpoint to get all images with their aspect ratios"""
+    pathFilter = frequest.args.get('path', default=None)
+    tagsFilter = frequest.args.getlist('tag')
+
+    if pathFilter is not None:
+        pathFilter = f"{pathFilter}%"
+
+    # Get media list from database
+    rows = getMediaInfo(
+        pathFilter=pathFilter,
+        tagsFilter=tagsFilter
+    )
+
+    mediaInfo = []
+    for row in rows:
+        mediaInfo.append({
+            'hash': row[0],
+            'name': basename(row[1]),
+            'aspectRatio': row[2],
+            'video': row[3],
+            'duration': row[4],
+            'rotation': row[5],
+            'width': row[6],
+            'height': row[7],
+            'path': row[1],
+            'size': row[8]
+        })
+    return jsonify(mediaInfo)
+
+
+def cachedResp(resp: Response) -> Response:
+    resp = make_response(resp)
+    resp.headers['Cache-Control'] = 'public, max-age=86400, immutable'
+    return resp
+
+
+@bp.route('/files/<hash>/thumbnail')
+def serve_thumbnail(hash):
+    if hash not in current_app.config['mediaPath']:
+        abort(404)
+    return cachedResp(send_from_directory(
+        abspath(current_app.config['thumbnailDir']),
+        current_app.config['mediaPath'][hash]['thumbnail']
+    ))
+
+
+@bp.route('/files/<hash>/original')
+def serve_originalMedia(hash):
+    if hash not in current_app.config['mediaPath']:
+        abort(404)
+
+    original_path = current_app.config['mediaPath'][hash]['original']
+    # Path is relative
+    if not isabs(original_path):
+        # Convert to absolute path based on current working directory
+        original_path = pathJoin(
+            current_app.config['configDir'],
+            original_path
+        )
+    return cachedResp(send_file(original_path))
+
+
+@bp.route(
+    '/api/rotate/<string:hash>/<string:direction>',
+    methods=['POST']
+)
+def rotateImage(hash, direction):
+    media = Media.query.filter_by(hash=hash).first()
+    directions = {
+        'right': 90,
+        'left': -90,
+    }
+    if not media or direction not in directions:
+        return jsonify({
+            "success": False,
+            "msg": f"Failed to rotate {hash} {direction}"
+        })
+
+    media.rotation = ((media.rotation or 0) + directions[direction]) % 360
+    db.session.commit()
+
+    # Rotate current session
+    for m in current_app.config['mediaInfo']:
+        if m['hash'] == hash:
+            m['rotation'] = media.rotation
+            break
+
+    return jsonify({
+        "success": True,
+        "msg": f"Rotated {hash} {direction}"
+    })
+
+
+@bp.route('/api/tags', methods=['GET'])
+def getTags():
+    hashFilter = frequest.args.get('hash', default=None)
+    rows = []
+    if hashFilter is None:
+        # Get names of all tags
+        rows = db.session.query(distinct(MediaTag.tag)).all()
+    else:
+        rows = (
+            MediaTag.query
+            .with_entities(MediaTag.tag)
+            .filter_by(hash=hashFilter)
+            .all()
+        )
+
+    return jsonify({
+        'success': True,
+        'data': [tag for (tag,) in rows]
+    })
+
+
+@bp.route('/api/tags', methods=['POST'])
+def addTag():
+    data = frequest.get_json()
+    if not data:
+        return jsonify({
+            'success': False,
+            'error': 'No JSON data received'
+        }), 400
+
+    tags = data.get('tag', [])
+    hashes = data.get('hashes', [])
+    rows = []
+    for tag in tags:
+        mediaWithTag = (
+            MediaTag.query
+            .with_entities(MediaTag.hash)
+            .filter_by(tag=tag)
+            .all()
+        )
+        mediaWithTag = [m for (m,) in mediaWithTag]
+        for hash in hashes:
+            if hash in mediaWithTag:
+                continue
+            rows.append(MediaTag(
+                hash=hash,
+                tag=tag
+            ))
+    db.session.add_all(rows)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+    }), 200
