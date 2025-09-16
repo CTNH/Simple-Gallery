@@ -249,7 +249,7 @@ async function openLightbox(idx) {
 	const lightboxVid = document.getElementById('lightbox-vid');
 
 	document.getElementById('lightbox').classList.add('active');
-	document.getElementById('lightbox-button-row').style.display = 'flex';
+	document.getElementById('lightbox-button-row').classList.add('active');
 
 	if (allMedia[idx].video === false) {
 		rotateLightboxImg();
@@ -655,27 +655,32 @@ selectModeCheckbox.addEventListener('change', function() {
 });
 
 function showLightboxButtons() {
-	document.getElementById('lightbox-button-row').style.display = 'flex';
+	document.getElementById('lightbox-button-row').classList.add('active');
 	document.querySelectorAll('.lightbox-nav').forEach((elem) => {
-		elem.style.display = '';
+		elem.classList.add('active');
 	});
 }
 
 ['play', 'pause', 'ended'].forEach(event =>
 	lightboxVid.addEventListener(event, (e) => {
 		const vid = e.target;
-		const buttonRow = document.getElementById('lightbox-button-row');
 		if (vid.paused || vid.ended) {
 			showLightboxButtons();
 		}
 		else {
-			buttonRow.style.display = 'none';
+			document.getElementById('lightbox-button-row').classList.remove('active');
 			document.querySelectorAll('.lightbox-nav').forEach((elem) => {
-				elem.style.display = 'none';
+				elem.classList.remove('active');
 			});
 		}
 	})
 );
+
+document.getElementById('tag-input').addEventListener('keydown', e => {
+	if (e.key === 'Enter') {
+		addTag();
+	}
+});
 
 document.addEventListener('keydown', (e) => {
 	if (selectMode) {

@@ -149,10 +149,6 @@ body {
 	color: #888;
 }
 
-.lightbox-nav:hover {
-	background: rgba(255, 255, 255, 0.3);
-}
-
 .lightbox-prev {
 	left: 12px;
 }
@@ -194,6 +190,12 @@ body {
 	gap: 12px;
 	pointer-events: none;
 	z-index: 2000;
+	opacity: 0;
+	transition: all 0.2s ease;
+}
+
+#lightbox-button-row.active {
+	opacity: 1;
 }
 
 .lightbox-nav,
@@ -225,6 +227,14 @@ body {
 	top: 50%;
 	z-index: 2000;
 	transition: transform 0.3s ease;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.lightbox-nav.active {
+	opacity: 1;
+	transition: all 0.3s ease;
+	pointer-events: auto;
 }
 
 /* Info Panel Styles - Desktop */
@@ -284,11 +294,6 @@ body {
 	.lightbox.info-open #lightbox-media-container {
 		height: 60vh;
 		min-height: 300px;
-	}
-
-	#lightbox-button-row {
-		position: fixed;
-		bottom: 20px;
 	}
 
 	.info-panel {
@@ -437,15 +442,6 @@ body {
 	.lightbox-nav {
 		font-size: 20px;
 		padding: 8px 12px;
-	}
-
-	#lightbox-button-row {
-		gap: 8px;
-	}
-
-	#lightbox-button-row a {
-		width: 2.5rem;
-		height: 2.5rem;
 	}
 
 	.info-content {
