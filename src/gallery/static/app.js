@@ -17,6 +17,10 @@ let checkSelect = true;
 let currentPath = null;
 const TAGS_CACHE = 'tags-cache';
 
+const Toast_Container = document.getElementById('toast-container');
+const First_Toast = document.getElementById('first-toast');
+let lastToast = First_Toast;
+
 const Modes = {
 	none: 0,
 	lightbox: 1,
@@ -161,14 +165,14 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 		document.getElementById('filter-path').innerHTML = "Path " + createPathButtons(path);
 
 		tags = await getJSONCache(resources='/api/tags', cacheName=TAGS_CACHE);
-		tagButtons = 'All Tags<br>';
+		tagButtons = '';
 
 		tags['data'].forEach(tag => {
 			tagButtons += `<a onclick="addActiveFilters({tags:['${tag}']})">${tag}</a>`;
 		});
 		document.getElementById('filter-all-tags').innerHTML = tagButtons;
 
-		tagButtons = 'Active Tags<br>';
+		tagButtons = '';
 		if (activeTags.size === 0) {
 			tagButtons += "None";
 		}
@@ -678,15 +682,46 @@ async function addTag() {
 		await caches.delete(TAGS_CACHE);
 
 		const resp = await response.json();
-		if (resp['success']) {
-			closeTagPrompt();
-			return;
+		if (!resp['success']) {
+			// TODO Show error message to user
 		}
-		// TODO Show error message to user
+
+		closeTagPrompt();
+		createToast(
+			msg=`Successfully added ${data['tag'].length} tags to ${data['hashes'].length} items`,
+			bgColor='#4ad466'
+		);
+		return;
 
 	} catch (error) {
 		console.error("Error sending data: ", error)
 	}
+}
+
+function createToast(msg, bgColor) {
+	const toast = document.createElement('div');
+	toast.classList.add('toast-banner');
+	toast.innerText = msg;
+	toast.style.backgroundColor = bgColor;
+
+	// Keep previous toast on top of new
+	Toast_Container.insertBefore(toast, lastToast);
+
+	lastToast = toast;
+	// Smooth appearance
+	setTimeout(() => {
+		toast.style.transform = 'translateY(0px)';
+	}, 0);
+	// Smooth disappearance
+	setTimeout(() => {
+		toast.style.transform = 'translateY(4em)';
+		setTimeout(() => {
+			if (lastToast === toast) {
+				lastToast = First_Toast;
+			}
+			Toast_Container.removeChild(toast);
+		}, 600);
+	}, 4000);
 }
 
 function selectModeSelectAll() {

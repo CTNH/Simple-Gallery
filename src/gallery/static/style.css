@@ -81,6 +81,18 @@ body {
 
 .filter-tags {
 	line-height: 32px;
+	flex-wrap: wrap;
+	display: flex;
+	margin-left: 16px;
+	margin-right: 16px;
+	justify-content: center;
+	padding-top: 0px;
+}
+
+.filter-tags-header {
+	display: flex;
+	justify-content: center;
+	padding-top: 20px;
 }
 
 .header h1 {
@@ -92,9 +104,9 @@ body {
 	color: #fff;
 }
 
+.filter-tags-header,
 .header p {
 	color: #888;
-	font-size: 1.1rem;
 }
 
 .stats {
@@ -434,6 +446,9 @@ body {
 	padding-bottom: 2px;
 	line-height: 25px;
 	border-radius: 4px;
+	max-width: 100%;
+	word-wrap: break-word;
+	overflow-wrap: anywhere;
 }
 
 #filter-path a:hover,
@@ -541,6 +556,7 @@ body {
 	position: fixed;
 	bottom: 10px;
 	right: 10px;
+	z-index: 100;
 }
 
 .select-mode-text {
@@ -634,5 +650,17 @@ body {
 	border: none;
 	border-radius: 1em;
 	cursor: pointer;
+}
+
+.toast-banner {
+	position: fixed;
+	bottom: 0px;
+	width: 100%;
+	padding: 8px;
+	color: #333;
+	transform: translateY(4em);
+	transition: all 0.5s ease;
+	border-top: 2px solid #555;
+	font-weight: bold;
 }
 

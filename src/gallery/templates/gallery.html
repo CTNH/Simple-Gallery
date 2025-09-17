@@ -5,6 +5,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Media Gallery</title>
 	<link rel="stylesheet" href="/static/style.css">
+	<!-- Favicon -->
+	<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
 </head>
 <body>
 	<div class="header">
@@ -13,7 +15,9 @@
 	</div>
 
 	<div class="filter-tag-container">
+		<div class="filter-tags-header">All Tags</div>
 		<div class="filter-tags" id="filter-all-tags"></div>
+		<div class="filter-tags-header">Active Tags</div>
 		<div class="filter-tags" id="filter-active-tags"></div>
 	</div>
 	<div class="stats" id="stats">Loading...</div>
@@ -21,6 +25,11 @@
 	<div class="gallery-container" id="gallery">
 		<div class="loading">Loading images...</div>
 	</div>
+
+	<div id="toast-container">
+		<div id="first-toast"></div>
+	</div>
+
 
 	<!-- Select Mode -->
 	<div class="select-mode-info-bar" id="select-mode-info-bar">
