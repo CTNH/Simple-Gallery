@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, send_from_directory, send_file
-from flask import abort, request as frequest, Response, make_response, jsonify
+from flask import abort, request as frequest, make_response, jsonify
 from flask import current_app
 from os.path import isabs, join as pathJoin, basename, abspath
 from gallery.models import Media, MediaTag
@@ -135,7 +135,6 @@ def rotateImage(hash, direction):
 
 
 @bp.route('/api/tags', methods=['GET'])
-@cacheControl()
 def getTags():
     hashFilter = frequest.args.get('hash', default=None)
     rows = []

@@ -16,6 +16,7 @@ let mouseDown = false;
 let checkSelect = true;
 
 let currentPath = null;
+const TAGS_CACHE = 'tags-cache';
 
 const lightboxVid = document.getElementById('lightbox-vid');
 
@@ -69,6 +70,48 @@ async function removeActiveFilters({tags = []}) {
 	loadMediaByFilter({path: currentPath, tags: Array.from(activeTags)});
 }
 
+// Resource can be single string or array, returns single response or dictionary
+// Add if resource not in cache, return cache
+async function getCache(resources, cacheName) {
+	const cache = await caches.open(cacheName);
+	const cachedResp = {};
+	const singleResource = typeof resources === 'string';
+
+	if (singleResource) {
+		resources = [resources];
+	}
+
+	for (const r of resources) {
+		cachedResp[r] = await cache.match(r);
+
+		// Resource not in cache
+		if (!cachedResp[r]) {
+			await cache.add(r);
+			cachedResp[r] = await cache.match(r);
+		}
+	}
+
+	if (singleResource) {
+		return cachedResp[resources[0]];
+	}
+	return cachedResp;
+}
+
+async function getJSONCache(resources, cacheName) {
+	const cachedResp = await getCache(resources, cacheName);
+
+	if (typeof resources === 'string') {
+		return await cachedResp.json();
+	}
+
+	const jsonResp = {};
+	for (const resource in cachedResp) {
+		jsonResp[resource] = await cachedResp[resource].json();
+	}
+
+	return jsonResp;
+}
+
 async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}) {
 	activeTags.clear();
 	selectedItems = new Set();
@@ -110,10 +153,9 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 
 		document.getElementById('filter-path').innerHTML = "Path " + createPathButtons(path);
 
-		response = await fetch('/api/tags');
-		tags = await response.json();
-
+		tags = await getJSONCache(resources='/api/tags', cacheName=TAGS_CACHE);
 		tagButtons = 'All Tags<br>';
+
 		tags['data'].forEach(tag => {
 			tagButtons += `<a onclick="addActiveFilters({tags:['${tag}']})">${tag}</a>`;
 		});
@@ -165,8 +207,7 @@ function createPathButtons(path) {
 
 async function createInfoTagButtons(hash) {
 	if (!(hash in allTags)) {
-		let resp = await fetch('/api/tags?hash=' + hash);
-		resp = await resp.json();
+		let resp = await getJSONCache(resources='/api/tags?hash=' + hash, cache=TAGS_CACHE);
 
 		if (!resp['success']) {
 			console.error("Failed to get tags data.")
@@ -621,6 +662,9 @@ async function addTag() {
 		if (!response.ok) {
 			throw new Error(`Server error: ${response.status}`);
 		}
+
+		// Clear tag cache
+		await caches.delete(TAGS_CACHE);
 
 		const resp = await response.json();
 		if (resp['success']) {
