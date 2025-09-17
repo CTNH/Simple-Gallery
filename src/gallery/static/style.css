@@ -229,7 +229,6 @@ body {
 	transition: background-color 0.2s, color 0.2s;
 	width: 3rem;
 	height: 3rem;
-	pointer-events: auto;
 }
 
 .lightbox-nav:hover,

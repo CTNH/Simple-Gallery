@@ -24,9 +24,11 @@ let lastToast = First_Toast;
 const Modes = {
 	none: 0,
 	lightbox: 1,
-	select: 2
+	select: 2,
+	tagprompt: 3
 };
 let activeMode = Modes.none;
+let lastActiveMode = Modes.none;
 
 const lightboxVid = document.getElementById('lightbox-vid');
 
@@ -646,9 +648,15 @@ function handleResize() {
 
 function openTagPrompt() {
 	document.getElementById('tag-overlay').classList.add('active');
+	const input = document.getElementById('tag-input');
+	lastActiveMode = activeMode;
+	activeMode = Modes.tagprompt;
+	input.select();
 }
 function closeTagPrompt() {
 	document.getElementById('tag-overlay').classList.remove('active');
+	document.getElementById('tag-input').blur();
+	activeMode = lastActiveMode;
 }
 
 async function addTag() {
@@ -824,16 +832,11 @@ document.addEventListener('keydown', (e) => {
 		case Modes.select:
 			switch (e.key) {
 				case 's':
-					// Ignore if typing in input
-					if (e.target.tagName === 'INPUT')
-						break;
 				case 'Escape':
 					toggleSelectionMode();
 					selectModeCheckbox.checked = false;
 					break;
 				case 'a':
-					if (e.target.tagName === 'INPUT')
-						break;
 					// Deslect if all is selected
 					if (selectedItems.size === allMedia.length) {
 						selectModeDeselectAll();
@@ -841,6 +844,18 @@ document.addEventListener('keydown', (e) => {
 					else {
 						selectModeSelectAll();
 					}
+					break;
+				case 't':
+					e.preventDefault();
+					openTagPrompt();
+					break;
+			}
+			break;
+
+		case Modes.tagprompt:
+			switch(e.key) {
+				case 'Escape':
+					closeTagPrompt();
 					break;
 			}
 			break;
