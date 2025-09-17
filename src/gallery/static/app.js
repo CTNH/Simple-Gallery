@@ -9,7 +9,6 @@ let currMediaIdx = 0;
 let lastWinWidth = window.innerWidth;
 let infoPanelOpen = false;
 
-let selectMode = false;
 let selectedItems = new Set();
 let lastSelected = null;
 let mouseDown = false;
@@ -17,6 +16,13 @@ let checkSelect = true;
 
 let currentPath = null;
 const TAGS_CACHE = 'tags-cache';
+
+const Modes = {
+	none: 0,
+	lightbox: 1,
+	select: 2
+};
+let activeMode = Modes.none;
 
 const lightboxVid = document.getElementById('lightbox-vid');
 
@@ -117,7 +123,8 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 	selectedItems = new Set();
 	updateSelectModeMediaCount();
 	selectModeCheckbox.checked = false;
-	selectMode = true;
+
+	activeMode = Modes.select;
 	toggleSelectionMode();
 
 	closeLightbox();
@@ -316,6 +323,8 @@ function calculateRows(viewWidth, mediaInfo) {
 
 async function openLightbox(idx) {
 	currMediaIdx = idx;
+	activeMode = Modes.lightbox;
+
 	const lightboxImg = document.getElementById('lightbox-img');
 	const lightboxVid = document.getElementById('lightbox-vid');
 
@@ -374,6 +383,8 @@ function closeLightbox() {
 	lightboxVid.load();
 
 	showLightboxButtons();
+
+	activeMode = Modes.none;
 
 	document.getElementById('lightbox').classList.remove('active');
 	document.getElementById('info-panel').classList.remove('active');
@@ -711,14 +722,14 @@ document.getElementById('tag-overlay').addEventListener('click', (e) => {
 });
 function toggleSelectionMode() {
 	const selectModeBar = document.getElementById('select-mode-info-bar');
-	if (selectMode) {
-		selectMode = false;
+	if (activeMode === Modes.select) {
+		activeMode = Modes.none;
 		selectModeBar.classList.remove('active');
 		cssRules['.selection-checkbox'].style.opacity = 0;
 		cssRules['.selection-checkbox'].style.pointerEvents = 'none';
 	}
 	else {
-		selectMode = true;
+		activeMode = Modes.select;
 		selectModeBar.classList.add('active');
 		cssRules['.selection-checkbox'].style.pointerEvents = 'all';
 		cssRules['.selection-checkbox'].style.opacity = 1;
@@ -757,51 +768,60 @@ document.getElementById('tag-input').addEventListener('keydown', e => {
 });
 
 document.addEventListener('keydown', (e) => {
-	if (selectMode) {
-		switch (e.key) {
-			case 's':
-				// Ignore if typing in input
-				if (e.target.tagName === 'INPUT')
+	switch (activeMode) {
+		case Modes.lightbox:
+			switch (e.key) {
+				case 'Escape':
+					closeLightbox();
 					break;
-			case 'Escape':
-				toggleSelectionMode();
-				selectModeCheckbox.checked = false;
-				break;
-			case 'a':
-				if (e.target.tagName === 'INPUT')
+				case 'ArrowRight':
+					nextMedia();
 					break;
-				// Deslect if all is selected
-				if (selectedItems.size === allMedia.length) {
-					selectModeDeselectAll();
-				}
-				else {
-					selectModeSelectAll();
-				}
-				break;
-		}
-		return;
-	}
-	switch (e.key) {
-		case 'Escape':
-			closeLightbox();
-			break;
-		case 'ArrowRight':
-			nextMedia();
-			break;
-		case 'ArrowLeft':
-			prevMedia();
-			break;
-		case 'i':
-		case 'I':
-			if (document.getElementById('lightbox').classList.contains('active')) {
-				toggleInfoPanel();
+				case 'ArrowLeft':
+					prevMedia();
+					break;
+				case 'i':
+					toggleInfoPanel();
+					break;
 			}
 			break;
-		case 's':
-			selectModeCheckbox.checked = true;
-			toggleSelectionMode();
+
+		case Modes.select:
+			switch (e.key) {
+				case 's':
+					// Ignore if typing in input
+					if (e.target.tagName === 'INPUT')
+						break;
+				case 'Escape':
+					toggleSelectionMode();
+					selectModeCheckbox.checked = false;
+					break;
+				case 'a':
+					if (e.target.tagName === 'INPUT')
+						break;
+					// Deslect if all is selected
+					if (selectedItems.size === allMedia.length) {
+						selectModeDeselectAll();
+					}
+					else {
+						selectModeSelectAll();
+					}
+					break;
+			}
 			break;
+
+		case Modes.none:
 		default:
+			switch (e.key) {
+				case 'ArrowRight':
+				case 'ArrowLeft':
+					openLightbox(currMediaIdx);
+					break;
+				case 's':
+					selectModeCheckbox.checked = true;
+					toggleSelectionMode();
+					break;
+			}
 			break;
 	}
 });
