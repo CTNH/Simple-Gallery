@@ -1,3 +1,5 @@
+import { clearCache, getJSONCache } from "./cache.js";
+
 let allMedia = [];
 let allTags = {};
 const activeTags = new Set();
@@ -10,7 +12,6 @@ let lastWinWidth = window.innerWidth;
 let infoPanelOpen = false;
 
 let selectedItems = new Set();
-let lastSelected = null;
 let mouseDown = false;
 let checkSelect = true;
 
@@ -80,48 +81,6 @@ async function removeActiveFilters({tags = []}) {
 		activeTags.delete(tag);
 	});
 	loadMediaByFilter({path: currentPath, tags: Array.from(activeTags)});
-}
-
-// Resource can be single string or array, returns single response or dictionary
-// Add if resource not in cache, return cache
-async function getCache(resources, cacheName) {
-	const cache = await caches.open(cacheName);
-	const cachedResp = {};
-	const singleResource = typeof resources === 'string';
-
-	if (singleResource) {
-		resources = [resources];
-	}
-
-	for (const r of resources) {
-		cachedResp[r] = await cache.match(r);
-
-		// Resource not in cache
-		if (!cachedResp[r]) {
-			await cache.add(r);
-			cachedResp[r] = await cache.match(r);
-		}
-	}
-
-	if (singleResource) {
-		return cachedResp[resources[0]];
-	}
-	return cachedResp;
-}
-
-async function getJSONCache(resources, cacheName) {
-	const cachedResp = await getCache(resources, cacheName);
-
-	if (typeof resources === 'string') {
-		return await cachedResp.json();
-	}
-
-	const jsonResp = {};
-	for (const resource in cachedResp) {
-		jsonResp[resource] = await cachedResp[resource].json();
-	}
-
-	return jsonResp;
 }
 
 async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}) {
@@ -745,7 +704,7 @@ async function addTag() {
 		}
 
 		// Clear tag cache
-		await caches.delete(TAGS_CACHE);
+		await clearCache(TAGS_CACHE);
 
 		const resp = await response.json();
 		if (!resp['success']) {
@@ -754,8 +713,8 @@ async function addTag() {
 
 		closeTagPrompt();
 		createToast(
-			msg=`Successfully added ${data['tag'].length} tags to ${data['hashes'].length} items`,
-			bgColor='#4ad466'
+			`Successfully added ${data['tag'].length} tags to ${data['hashes'].length} items`,
+			'#4ad466'
 		);
 		return;
 
