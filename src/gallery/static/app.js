@@ -335,7 +335,7 @@ async function openLightbox(idx) {
 	const lightboxVid = document.getElementById('lightbox-vid');
 
 	document.getElementById('lightbox').classList.add('active');
-	document.getElementById('lightbox-button-row').classList.add('active');
+	showLightboxButtons();
 
 	if (allMedia[idx].video === false) {
 		rotateLightboxImg();
@@ -388,11 +388,12 @@ function closeLightbox() {
 	lightboxVid.removeAttribute('src');
 	lightboxVid.load();
 
-	showLightboxButtons();
+	hideLightboxButtons();
 
 	activeMode = Modes.none;
 
 	document.getElementById('lightbox').classList.remove('active');
+	document.getElementById('lightbox-button-row').classList.remove('active');
 	document.getElementById('info-panel').classList.remove('active');
 
 	// Restore Scrolling
@@ -788,6 +789,12 @@ function showLightboxButtons() {
 		elem.classList.add('active');
 	});
 }
+function hideLightboxButtons() {
+	document.getElementById('lightbox-button-row').classList.remove('active');
+	document.querySelectorAll('.lightbox-nav').forEach((elem) => {
+		elem.classList.remove('active');
+	});
+}
 
 ['play', 'pause', 'ended'].forEach(event =>
 	lightboxVid.addEventListener(event, (e) => {
@@ -796,10 +803,7 @@ function showLightboxButtons() {
 			showLightboxButtons();
 		}
 		else {
-			document.getElementById('lightbox-button-row').classList.remove('active');
-			document.querySelectorAll('.lightbox-nav').forEach((elem) => {
-				elem.classList.remove('active');
-			});
+			hideLightboxButtons();
 		}
 	})
 );
@@ -837,12 +841,21 @@ document.addEventListener('keydown', (e) => {
 					selectModeCheckbox.checked = false;
 					break;
 				case 'a':
-					// Deslect if all is selected
+					// Deselect all if all is selected
 					if (selectedItems.size === allMedia.length) {
 						selectModeDeselectAll();
 					}
 					else {
 						selectModeSelectAll();
+					}
+					break;
+				case 'A':
+					// Select all if none is selected
+					if (selectedItems.size === 0) {
+						selectModeSelectAll();
+					}
+					else {
+						selectModeDeselectAll();
 					}
 					break;
 				case 't':
