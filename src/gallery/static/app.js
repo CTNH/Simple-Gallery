@@ -83,6 +83,20 @@ async function removeActiveFilters({tags = []}) {
 	loadMediaByFilter({path: currentPath, tags: Array.from(activeTags)});
 }
 
+async function updateAllTags() {
+	const tags = await getJSONCache('/api/tags', TAGS_CACHE);
+	const allTagsFilter = document.getElementById('filter-all-tags');
+	allTagsFilter.innerHTML = '';
+	tags['data'].forEach(tag => {
+		const a = document.createElement('a');
+		a.textContent = tag;
+		a.addEventListener('click', () => {
+			addActiveFilters({ tags: [tag] });
+		});
+		allTagsFilter.appendChild(a);
+	});
+}
+
 async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}) {
 	activeTags.clear();
 	selectedItems = new Set();
@@ -128,18 +142,7 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 		pathFilter.innerHTML = 'Path';
 		pathFilter.appendChild(createPathButtons(path));
 
-		tags = await getJSONCache('/api/tags', TAGS_CACHE);
-
-		const allTagsFilter = document.getElementById('filter-all-tags');
-		allTagsFilter.innerHTML = '';
-		tags['data'].forEach(tag => {
-			const a = document.createElement('a');
-			a.textContent = tag;
-			a.addEventListener('click', () => {
-				addActiveFilters({ tags: [tag] });
-			});
-			allTagsFilter.appendChild(a);
-		});
+		updateAllTags();
 
 		const activeTagsFilter = document.getElementById('filter-active-tags');
 		activeTagsFilter.innerHTML = '';
@@ -671,6 +674,7 @@ function openTagPrompt() {
 	input.select();
 }
 function closeTagPrompt() {
+	hideTagErr();
 	document.getElementById('tag-overlay').classList.remove('active');
 	document.getElementById('tag-input').blur();
 	activeMode = lastActiveMode;
@@ -690,6 +694,8 @@ async function addTag() {
 		data['hashes'].push(allMedia[idx].hash);
 	}
 
+	hideTagErr();
+
 	try {
 		const response = await fetch('/api/tags', {
 			method: 'POST',
@@ -708,8 +714,11 @@ async function addTag() {
 
 		const resp = await response.json();
 		if (!resp['success']) {
-			// TODO Show error message to user
+			showTagErr("Error adding tag!");
+			return;
 		}
+
+		updateAllTags();
 
 		closeTagPrompt();
 		createToast(
@@ -719,8 +728,19 @@ async function addTag() {
 		return;
 
 	} catch (error) {
-		console.error("Error sending data: ", error)
+		showTagErr("Error sending data: " + error);
 	}
+}
+
+function showTagErr(msg) {
+	let tagError = document.getElementById('tag-error');
+	tagError.classList.add('active');
+	tagError.innerText = msg;
+}
+function hideTagErr() {
+	let tagError = document.getElementById('tag-error');
+	tagError.classList.remove('active');
+	tagError.innerText = '';
 }
 
 function createToast(msg, bgColor) {

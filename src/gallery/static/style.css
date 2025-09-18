@@ -520,7 +520,7 @@ body {
 	margin:5px;
 }
 
-.tag-info input {
+#tag-input {
 	width: 100%;
 	padding: 8px;
 	border: 1px solid rgba(255,255,255, 0.6);
@@ -528,6 +528,19 @@ body {
 	background-color: initial;
 	outline: none;
 	color: white;
+}
+
+#tag-error {
+	padding: 0px;
+	margin: 0px;
+	padding-left: 10px;
+	margin-left: 5px;
+	transition: all 0.3s ease;
+	color: #f04444;
+}
+#tag-error.active {
+	padding: 10px;
+	margin: 5px;
 }
 
 .tag-action {
