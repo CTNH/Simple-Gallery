@@ -374,8 +374,8 @@ function rotateLightboxImg() {
 		if (allMedia[currMediaIdx].rotation === 90 || allMedia[currMediaIdx].rotation === 270) {
 			const lightbox = document.getElementById('lightbox');
 			// Swap width and height
-			lightboxImg.style.maxWidth = ((lightbox.clientHeight-infoPanelWidth)*0.9) + 'px';
-			lightboxImg.style.maxHeight = (lightbox.clientWidth*0.96) + 'px';
+			lightboxImg.style.maxWidth = (lightbox.clientHeight*0.96) + 'px';
+			lightboxImg.style.maxHeight = (lightbox.clientWidth*0.9 - infoPanelWidth) + 'px';
 		}
 	}
 	else {
