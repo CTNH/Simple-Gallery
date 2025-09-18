@@ -136,6 +136,7 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 	closeLightbox();
 
 	currentPath = path;
+	currMediaIdx = 0;
 
 	try {
 		let queryparam = [];
@@ -164,26 +165,38 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 		let response = await fetch(apiEndpoint);
 		allMedia = await response.json();
 
-		document.getElementById('filter-path').innerHTML = "Path " + createPathButtons(path);
+		const pathFilter = document.getElementById('filter-path');
+		pathFilter.innerHTML = 'Path';
+		pathFilter.appendChild(createPathButtons(path));
 
 		tags = await getJSONCache('/api/tags', TAGS_CACHE);
-		let tagButtons = '';
 
+		const allTagsFilter = document.getElementById('filter-all-tags');
+		allTagsFilter.innerHTML = '';
 		tags['data'].forEach(tag => {
-			tagButtons += `<a onclick="addActiveFilters({tags:['${tag}']})">${tag}</a>`;
+			const a = document.createElement('a');
+			a.textContent = tag;
+			a.addEventListener('click', () => {
+				addActiveFilters({ tags: [tag] });
+			});
+			allTagsFilter.appendChild(a);
 		});
-		document.getElementById('filter-all-tags').innerHTML = tagButtons;
 
-		tagButtons = '';
+		const activeTagsFilter = document.getElementById('filter-active-tags');
+		activeTagsFilter.innerHTML = '';
 		if (activeTags.size === 0) {
-			tagButtons += "None";
+			activeTagsFilter.innerText = "None";
 		}
 		else {
 			activeTags.forEach(tag => {
-				tagButtons += `<a onclick="removeActiveFilters({tags:['${tag}']})">${tag}</a>`;
+				const a = document.createElement('a');
+				a.textContent = tag;
+				a.addEventListener('click', () => {
+					removeActiveFilters({ tags: [tag] });
+				});
+				activeTagsFilter.appendChild(a);
 			});
 		}
-		document.getElementById('filter-active-tags').innerHTML = tagButtons;
 
 		updateStats();
 
@@ -207,15 +220,36 @@ function createPathButtons(path) {
 	if (path == null) {
 		path = '/';
 	}
+
+	const container = document.createElement('div');
+	const basePath = document.createElement('a');
+	basePath.innerText = 'ALL';
+	basePath.title = 'Show media with any path';
+	basePath.addEventListener('click', () => {
+		addPathFilter(null);
+	});
+	container.appendChild(basePath);
+	container.appendChild(document.createTextNode('/'));
+
 	let cumPath = '';
-	let pathButtons = `<a onclick="addPathFilter(path=null);" title="Show media with any path">ALL</a>/`;
 	if (path !== '/') {
 		path.split('/').slice(0, -1).forEach(segment => {
 			cumPath += segment + "/";
-			pathButtons += `<a onclick="addPathFilter(path='${cumPath}')" title="Show only media in '${cumPath}'">${segment}</a>/`;
+			const currCumPath = cumPath;
+
+			const pathButton = document.createElement('a');
+			pathButton.title = "Show only media in '" + currCumPath + "'";
+			pathButton.innerText = segment;
+			pathButton.addEventListener('click', () => {
+				addPathFilter(currCumPath);
+			});
+
+			container.appendChild(pathButton);
+			container.appendChild(document.createTextNode('/'));
 		});
 	}
-	return pathButtons;
+
+	return container;
 }
 
 async function createInfoTagButtons(hash) {
@@ -234,11 +268,17 @@ async function createInfoTagButtons(hash) {
 		return 'None';
 	}
 
-	let tagButtons = '';
+	const container = document.createElement('div');
 	for (const tag of allTags[hash]) {
-		tagButtons += `<a onclick="addActiveFilters({tags:['${tag}']})">${tag}</a>`;
+		const tagButton = document.createElement('a');
+		tagButton.innerText = tag;
+		tagButton.addEventListener('click', () => {
+			addActiveFilters({ tags: [tag] });
+		});
+
+		container.appendChild(tagButton);
 	}
-	return tagButtons;
+	return container;
 }
 
 function updateStats() {
@@ -495,18 +535,35 @@ async function updateInfoPanel() {
 	]);
 	infoContent.innerHTML = "";
 	for (const [infoSection, infoItems] of infoData) {
-		infoContent.innerHTML += '<div class="info-section"><h3>' + infoSection + "</h3>"
+		const infoSectionElem = document.createElement('div');
+		infoSectionElem.className = 'info-section';
+
+		const infoSectionHeaderElem = document.createElement('h3');
+		infoSectionHeaderElem.innerText = infoSection;
+		infoSectionElem.appendChild(infoSectionHeaderElem);
+
 		for (const [infoLabel, infoValue] of infoItems) {
-			infoContent.innerHTML += '<div class="info-item">' +
-									'<span class="info-label">' +
-									infoLabel +
-									'</span>' +
-									'<span class="info-value">' +
-									infoValue +
-									'</span>' +
-									'</div>';
+			const infoItemElem = document.createElement('div');
+			infoItemElem.className = 'info-item';
+
+			const infoLabelElem = document.createElement('span');
+			infoLabelElem.className = "info-label";
+			infoLabelElem.innerHTML = infoLabel;
+			infoItemElem.appendChild(infoLabelElem);
+
+			const infoValueElem = document.createElement('span');
+			infoValueElem.className = "info-value";
+			if (infoValue instanceof Element) {
+				infoValueElem.appendChild(infoValue);
+			}
+			else {
+				infoValueElem.innerHTML = infoValue;
+			}
+			infoItemElem.appendChild(infoValueElem);
+
+			infoSectionElem.appendChild(infoItemElem);
 		}
-		infoContent.innerHTML += '</div>'
+		infoContent.appendChild(infoSectionElem);
 	}
 }
 
@@ -961,7 +1018,6 @@ window.addEventListener('resize', () => {
 	}
 });
 
-window.addEventListener('load', loadMedia);
 // Detects backwards and forwards navigation
 window.addEventListener('popstate', function(e) {
 	if (e.state) {
@@ -970,10 +1026,11 @@ window.addEventListener('popstate', function(e) {
 });
 
 
+window.addEventListener('load', loadMedia);
 // Load images immediately if DOM is already ready
-if (document.readyState === 'loading') {
-	document.addEventListener('DOMContentLoaded', loadMedia);
-} else {
-	loadMedia();
-}
+// if (document.readyState === 'loading') {
+// 	document.addEventListener('DOMContentLoaded', loadMedia);
+// } else {
+// 	loadMedia();
+// }
 
