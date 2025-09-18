@@ -1,9 +1,9 @@
 let allMedia = [];
 let allTags = {};
 const activeTags = new Set();
-let galleryContainer = document.getElementById('gallery');
-let statsElement = document.getElementById('stats');
-const selectModeCheckbox = document.getElementById('select-mode-checkbox');
+const GALLERY_CONTAINER = document.getElementById('gallery');
+const STATS_ELEM = document.getElementById('stats');
+const SELECT_MODE_CHECKBOX = document.getElementById('select-mode-checkbox');
 let observer;
 let currMediaIdx = 0;
 let lastWinWidth = window.innerWidth;
@@ -17,9 +17,9 @@ let checkSelect = true;
 let currentPath = null;
 const TAGS_CACHE = 'tags-cache';
 
-const Toast_Container = document.getElementById('toast-container');
-const First_Toast = document.getElementById('first-toast');
-let lastToast = First_Toast;
+const TOAST_CONTAINER = document.getElementById('toast-container');
+const FIRST_TOAST = document.getElementById('first-toast');
+let lastToast = FIRST_TOAST;
 
 const Modes = {
 	none: 0,
@@ -128,7 +128,7 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 	activeTags.clear();
 	selectedItems = new Set();
 	updateSelectModeMediaCount();
-	selectModeCheckbox.checked = false;
+	SELECT_MODE_CHECKBOX.checked = false;
 
 	activeMode = Modes.select;
 	toggleSelectionMode();
@@ -188,14 +188,14 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 		updateStats();
 
 		if (allMedia.length === 0) {
-			galleryContainer.innerHTML = '<div class="error">No images found.</div>';
+			GALLERY_CONTAINER.innerHTML = '<div class="error">No images found.</div>';
 		}
 		else {
 			renderGallery();
 		}
 	} catch (error) {
 		console.error('Error loading images:', error);
-		galleryContainer.innerHTML = '<div class="error">Error loading images. Please check the console for details.</div>';
+		GALLERY_CONTAINER.innerHTML = '<div class="error">Error loading images. Please check the console for details.</div>';
 	}
 }
 
@@ -242,7 +242,7 @@ async function createInfoTagButtons(hash) {
 }
 
 function updateStats() {
-	statsElement.textContent = `${allMedia.length} items • Window: ${window.innerWidth}x${window.innerHeight}px`;
+	STATS_ELEM.textContent = `${allMedia.length} items • Window: ${window.innerWidth}x${window.innerHeight}px`;
 }
 
 // Intersection Observer setup for lazy loading
@@ -556,7 +556,7 @@ function renderGallery() {
 
 	// Instead of clearing and recreating everything, reuse existing elements if possible
 	// For simplicity here, we clear and re-render container but defer image src loading
-	galleryContainer.innerHTML = '';
+	GALLERY_CONTAINER.innerHTML = '';
 
 	rows.forEach(row => {
 		const rowDiv = document.createElement('div');
@@ -621,12 +621,12 @@ function renderGallery() {
 
 			rowDiv.appendChild(container);
 		});
-		galleryContainer.appendChild(rowDiv);
+		GALLERY_CONTAINER.appendChild(rowDiv);
 	});
 	// After new elements added, observe their images for lazy loading
 	setupObserver();
 	// Start observing all images
-	const imgs = galleryContainer.querySelectorAll('img.gallery-media');
+	const imgs = GALLERY_CONTAINER.querySelectorAll('img.gallery-media');
 	imgs.forEach(img => observer.observe(img));
 }
 
@@ -714,7 +714,7 @@ function createToast(msg, bgColor) {
 	toast.style.backgroundColor = bgColor;
 
 	// Keep previous toast on top of new
-	Toast_Container.insertBefore(toast, lastToast);
+	TOAST_CONTAINER.insertBefore(toast, lastToast);
 
 	lastToast = toast;
 	// Smooth appearance
@@ -726,9 +726,9 @@ function createToast(msg, bgColor) {
 		toast.style.transform = 'translateY(4em)';
 		setTimeout(() => {
 			if (lastToast === toast) {
-				lastToast = First_Toast;
+				lastToast = FIRST_TOAST;
 			}
-			Toast_Container.removeChild(toast);
+			TOAST_CONTAINER.removeChild(toast);
 		}, 600);
 	}, 4000);
 }
@@ -768,7 +768,7 @@ function toggleSelectionMode() {
 		cssRules['.selection-checkbox'].style.opacity = 1;
 	}
 }
-selectModeCheckbox.addEventListener('change', function() {
+SELECT_MODE_CHECKBOX.addEventListener('change', function() {
 	toggleSelectionMode();
 });
 
@@ -881,7 +881,7 @@ document.addEventListener('keydown', (e) => {
 				case 's':
 				case 'Escape':
 					toggleSelectionMode();
-					selectModeCheckbox.checked = false;
+					SELECT_MODE_CHECKBOX.checked = false;
 					break;
 				case 'a':
 					// Deselect all if all is selected
@@ -924,7 +924,7 @@ document.addEventListener('keydown', (e) => {
 					openLightbox(currMediaIdx);
 					break;
 				case 's':
-					selectModeCheckbox.checked = true;
+					SELECT_MODE_CHECKBOX.checked = true;
 					toggleSelectionMode();
 					break;
 			}
