@@ -38,13 +38,13 @@
 		</div>
 		<div class="select-mode-info-buttons">
 			<div class="select-mode-info">
-				<button onclick="selectModeDeselectAll()">Deselect All</button>
+				<button id='select-mode-deselect-all'>Deselect All</button>
 			</div>
 			<div class="select-mode-info">
-				<button onclick="selectModeSelectAll()">Select All</button>
+				<button id='select-mode-select-all'>Select All</button>
 			</div>
 			<div class="select-mode-info">
-				<button onclick='openTagPrompt()'>Tag Selected</button>
+				<button id='select-mode-open-tags'>Tag Selected</button>
 			</div>
 		</div>
 	</div>
@@ -67,22 +67,22 @@
 				<input id='tag-input' placeholder="Tag name">
 			</div>
 			<div class="tag-action">
-				<button onclick="closeTagPrompt()">Cancel</button>
-				<button onclick="addTag()">Confirm</button>
+				<button id='tag-action-close'>Cancel</button>
+				<button id='tag-action-add'>Confirm</button>
 			</div>
 		</div>
 	</div>
 
 	<!-- Lightbox -->
 	<div class="lightbox" id="lightbox">
-		<button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+		<button class="lightbox-close" id="lightbox-close">&times;</button>
 
-		<a onclick="prevMedia()" class="lightbox-nav lightbox-prev" aria-label="Prev" role="button" title="Previous">
+		<a id="lightbox-prev" class="lightbox-nav lightbox-prev" aria-label="Prev" role="button" title="Previous">
 			<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 				<path d="M19.86,2.49A1,1,0,0,0,19,2H10a1,1,0,0,0-.87.51l-5,9s0,.07,0,.11a1.39,1.39,0,0,0-.06.19.91.91,0,0,0,0,.38,1.39,1.39,0,0,0,.06.19s0,.07,0,.11l5,9A1,1,0,0,0,10,22h9a1,1,0,0,0,.86-.49,1,1,0,0,0,0-1L15.14,12l4.73-8.51A1,1,0,0,0,19.86,2.49Z"/>
 			</svg>
 		</a>
-		<a onclick="nextMedia()" class="lightbox-nav lightbox-next" aria-label="Next" role="button" title="Next">
+		<a id="lightbox-next" class="lightbox-nav lightbox-next" aria-label="Next" role="button" title="Next">
 			<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 				<path d="M19.91,11.62s0-.07,0-.11l-5-9A1,1,0,0,0,14,2H5a1,1,0,0,0-.86.49,1,1,0,0,0,0,1L8.86,12,4.13,20.51a1,1,0,0,0,0,1A1,1,0,0,0,5,22h9a1,1,0,0,0,.87-.51l5-9s0-.07,0-.11a1.39,1.39,0,0,0,.06-.19.91.91,0,0,0,0-.38A1.39,1.39,0,0,0,19.91,11.62Z"/>
 			</svg>
@@ -94,19 +94,19 @@
 		</div>
 
 		<div id="lightbox-button-row">
-			<a onclick="rotate(-90); return false;" aria-label="Rotate Left" role="button" title="Rotate Image Left">
+			<a id="lightbox-button-counter-clockwise" aria-label="Rotate Left" role="button" title="Rotate Image Left">
 				<svg viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 					<path d="M14,28V16a2.0023,2.0023,0,0,1,2-2H28a2.0023,2.0023,0,0,1,2,2V28a2.0023,2.0023,0,0,1-2,2H16A2.0023,2.0023,0,0,1,14,28Z" transform="translate(0 0)"/>
 					<path d="M2,15l1.41-1.41L6,16.17V11a7.0078,7.0078,0,0,1,7-7h5V6H13a5.0057,5.0057,0,0,0-5,5v5.17l2.59-2.58L12,15,7,20Z" transform="translate(0 0)"/>
 				</svg>
 			</a>
-			<a onclick="rotate(90); return false;" aria-label="Rotate Right" role="button" title="Rotate Image Right">
+			<a id="lightbox-button-clockwise" aria-label="Rotate Right" role="button" title="Rotate Image Right">
 				<svg viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 					<path d="M16,30H4a2.0023,2.0023,0,0,1-2-2V16a2.0023,2.0023,0,0,1,2-2H16a2.0023,2.0023,0,0,1,2,2V28A2.0023,2.0023,0,0,1,16,30Z" transform="translate(0)"/>
 					<path d="M30,15l-1.41-1.41L26,16.17V11a7.0078,7.0078,0,0,0-7-7H14V6h5a5.0057,5.0057,0,0,1,5,5v5.17l-2.59-2.58L20,15l5,5Z" transform="translate(0)"/>
 				</svg>
 			</a>
-			<a onclick="toggleInfoPanel()" id="info-button" role="button" tile="Show Media Info">
+			<a id="lightbox-button-info-panel" role="button" tile="Show Media Info">
 				<svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 					<path d="M8 16A8 8 0 108 0a8 8 0 000 16zm0-9a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 7zm0-3a1 1 0 000 2h.007a1 1 0 000-2H8z" fill-rule="evenodd"/>
 				</svg>
@@ -118,7 +118,7 @@
 	<div class="info-panel" id="info-panel">
 		<div class="info-header">
 			<h2>Media Information</h2>
-			<button class="info-close" onclick="closeInfoPanel()">×</button>
+			<button class="info-close" id="info-panel-close">×</button>
 		</div>
 		<div class="info-content" id="info-content">
 		</div>

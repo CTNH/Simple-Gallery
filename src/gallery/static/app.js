@@ -166,8 +166,8 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 
 		document.getElementById('filter-path').innerHTML = "Path " + createPathButtons(path);
 
-		tags = await getJSONCache(resources='/api/tags', cacheName=TAGS_CACHE);
-		tagButtons = '';
+		tags = await getJSONCache('/api/tags', TAGS_CACHE);
+		let tagButtons = '';
 
 		tags['data'].forEach(tag => {
 			tagButtons += `<a onclick="addActiveFilters({tags:['${tag}']})">${tag}</a>`;
@@ -220,7 +220,7 @@ function createPathButtons(path) {
 
 async function createInfoTagButtons(hash) {
 	if (!(hash in allTags)) {
-		let resp = await getJSONCache(resources='/api/tags?hash=' + hash, cache=TAGS_CACHE);
+		let resp = await getJSONCache('/api/tags?hash=' + hash, TAGS_CACHE);
 
 		if (!resp['success']) {
 			console.error("Failed to get tags data.")
@@ -413,7 +413,7 @@ async function prevMedia() {
 }
 
 async function toggleInfoPanel() {
-	const infoButton = document.getElementById('info-button');
+	const infoButton = document.getElementById('lightbox-button-info-panel');
 
 	if (infoPanelOpen) {
 		closeInfoPanel();
@@ -438,7 +438,7 @@ async function openInfoPanel() {
 function closeInfoPanel() {
 	const infoPanel = document.getElementById('info-panel');
 	const lightboxContent = document.querySelector('.lightbox');
-	const infoButton = document.getElementById('info-button');
+	const infoButton = document.getElementById('lightbox-button-info-panel');
 
 	infoPanelOpen = false;
 	infoPanel.classList.remove('active');
@@ -753,17 +753,6 @@ function selectModeDeselectAll() {
 	updateSelectModeMediaCount();
 }
 
-// Close lightbox by clicking outside the image
-document.getElementById('lightbox-media-container').addEventListener('click', (e) => {
-	if (e.target.id === 'lightbox-media-container') {
-		closeLightbox();
-	}
-});
-document.getElementById('tag-overlay').addEventListener('click', (e) => {
-	if (e.target.id === 'tag-overlay') {
-		closeTagPrompt();
-	}
-});
 function toggleSelectionMode() {
 	const selectModeBar = document.getElementById('select-mode-info-bar');
 	if (activeMode === Modes.select) {
@@ -796,6 +785,59 @@ function hideLightboxButtons() {
 	});
 }
 
+document.getElementById('select-mode-deselect-all').addEventListener('click', () => {
+	selectModeDeselectAll();
+});
+document.getElementById('select-mode-select-all').addEventListener('click', () => {
+	selectModeSelectAll();
+});
+document.getElementById('select-mode-open-tags').addEventListener('click', () => {
+	openTagPrompt();
+});
+document.getElementById('tag-action-close').addEventListener('click', () => {
+	closeTagPrompt();
+});
+document.getElementById('tag-action-add').addEventListener('click', () => {
+	addTag();
+});
+document.getElementById('lightbox-close').addEventListener('click', () => {
+	closeLightbox();
+});
+document.getElementById('lightbox-prev').addEventListener('click', () => {
+	prevMedia();
+});
+document.getElementById('lightbox-next').addEventListener('click', () => {
+	nextMedia();
+});
+document.getElementById('lightbox-button-counter-clockwise').addEventListener('click', () => {
+	rotate(-90);
+});
+document.getElementById('lightbox-button-clockwise').addEventListener('click', () => {
+	rotate(90);
+});
+document.getElementById('lightbox-button-info-panel').addEventListener('click', () => {
+	toggleInfoPanel();
+});
+document.getElementById('info-panel-close').addEventListener('click', () => {
+	closeInfoPanel();
+});
+/*
+document.getElementById('').addEventListener('click', () => {
+});
+*/
+
+// Close lightbox by clicking outside the image
+document.getElementById('lightbox-media-container').addEventListener('click', (e) => {
+	if (e.target.id === 'lightbox-media-container') {
+		closeLightbox();
+	}
+});
+document.getElementById('tag-overlay').addEventListener('click', (e) => {
+	if (e.target.id === 'tag-overlay') {
+		closeTagPrompt();
+	}
+});
+
 ['play', 'pause', 'ended'].forEach(event =>
 	lightboxVid.addEventListener(event, (e) => {
 		const vid = e.target;
@@ -814,6 +856,7 @@ document.getElementById('tag-input').addEventListener('keydown', e => {
 	}
 });
 
+// Global keybinds
 document.addEventListener('keydown', (e) => {
 	switch (activeMode) {
 		case Modes.lightbox:
