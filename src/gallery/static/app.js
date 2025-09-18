@@ -857,6 +857,9 @@ document.getElementById('lightbox-button-info-panel').addEventListener('click', 
 document.getElementById('info-panel-close').addEventListener('click', () => {
 	closeInfoPanel();
 });
+document.getElementById('scroll-to-top-button').addEventListener('click', () => {
+	window.scrollTo({top: 0, behavior: 'smooth'});
+});
 /*
 document.getElementById('').addEventListener('click', () => {
 });
