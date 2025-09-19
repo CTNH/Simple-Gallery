@@ -326,6 +326,16 @@ function calculateRows(viewWidth, mediaInfo) {
 		lastImg = colInRow;
 	}
 
+	const lastRow = rows.slice(-1)[0];
+	const maxRowHeight = 280;
+	if (lastRow[0].height > maxRowHeight) {
+		for (let i = 0; i < lastRow.length; i++) {
+			lastRow[i].width = lastRow[i].aspectRatio * maxRowHeight;
+			lastRow[i].height = maxRowHeight;
+		}
+		rows[rows.length - 1] = lastRow
+	}
+
 	return rows;
 }
 
@@ -642,11 +652,11 @@ function renderGallery() {
 		});
 		GALLERY_CONTAINER.appendChild(rowDiv);
 	});
+
 	// After new elements added, observe their images for lazy loading
 	setupObserver();
 	// Start observing all images
-	const imgs = GALLERY_CONTAINER.querySelectorAll('img.gallery-media');
-	imgs.forEach(img => observer.observe(img));
+	GALLERY_CONTAINER.querySelectorAll('img.gallery-media').forEach(img => observer.observe(img));
 }
 
 // Debounced resize handler
