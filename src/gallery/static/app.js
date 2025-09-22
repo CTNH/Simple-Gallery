@@ -42,12 +42,22 @@ for (let i = 0; i < sheet.length; i++) {
 	cssRules[sheet[i].selectorText] = sheet[i];
 }
 
+// Fetch media info from API
+async function updateAllMedia(apiEndpoint) {
+	const response = await fetch(apiEndpoint);
+	const jsonResp = await response.json();
+	allMedia = new Map(jsonResp['data']);
+	allMediaIdx = Array.from(allMedia.keys());
+}
 
-// Fetch images from API
 async function loadMedia({pushState = true} = {}) {
-	if (window.location.pathname.startsWith('/lightbox')) {
-		// TODO
-		openLightbox();
+	if (window.location.pathname.startsWith('/lightbox/')) {
+		const mediaHash = window.location.pathname.slice(10);
+		if (allMedia.get(mediaHash, null) == null) {
+			await updateAllMedia();
+		}
+		openLightbox({hash: mediaHash, updateHistory: pushState});
+
 		return;
 	}
 
@@ -121,7 +131,7 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 	activeMode = Modes.select;
 	toggleSelectionMode();
 
-	closeLightbox();
+	closeLightbox({pushState: pushState});
 
 	currentPath = path;
 	currMediaIdx = 0;
@@ -150,10 +160,7 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 			window.history.pushState({}, '', '/');
 		}
 
-		const response = await fetch(apiEndpoint);
-		const jsonResp = await response.json();
-		allMedia = new Map(jsonResp['data']);
-		allMediaIdx = Array.from(allMedia.keys());
+		await updateAllMedia(apiEndpoint);
 
 		const pathFilter = document.getElementById('filter-path');
 		pathFilter.innerHTML = 'Path';
@@ -359,15 +366,24 @@ function calculateRows(viewWidth) {
 	return rows;
 }
 
-async function openLightbox(idx) {
-	currMediaIdx = idx;
+// Provide either idx or hash, if both present idx overwrites hash
+async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 	activeMode = Modes.lightbox;
-	const currMediaHash = allMediaIdx[idx];
-
-	if (!(window.location.pathname.startsWith('/lightbox/'))) {
-		prevPathName = window.location.pathname + window.location.search;
+	if (idx !== null) {
+		currMediaIdx = idx;
+		hash = allMediaIdx[idx];
 	}
-	window.history.pushState({}, '', '/lightbox/' + currMediaHash);
+	else if (hash == null) {
+		console.error("No index or hash provided!");
+		return;
+	}
+
+	if (updateHistory) {
+		if (!(window.location.pathname.startsWith('/lightbox/'))) {
+			prevPathName = window.location.pathname + window.location.search;
+		}
+		window.history.pushState({}, '', '/lightbox/' + hash);
+	}
 
 	const lightboxImg = document.getElementById('lightbox-img');
 	const lightboxVid = document.getElementById('lightbox-vid');
@@ -375,16 +391,16 @@ async function openLightbox(idx) {
 	document.getElementById('lightbox').classList.add('active');
 	showLightboxButtons();
 
-	if (allMedia.get(currMediaHash).video === false) {
+	if (allMedia.get(hash).video === false) {
 		rotateLightboxImg();
-		lightboxImg.src = `/media/${currMediaHash}/original`;
-		lightboxImg.alt = allMedia.get(currMediaHash).name;
+		lightboxImg.src = `/media/${hash}/original`;
+		lightboxImg.alt = allMedia.get(hash).name;
 
 		lightboxImg.classList.add('active');
 		lightboxVid.classList.remove('active');
 	}
 	else {
-		lightboxVid.src = `/media/${currMediaHash}/original`;
+		lightboxVid.src = `/media/${hash}/original`;
 
 		lightboxVid.classList.add('active');
 		lightboxImg.classList.remove('active');
@@ -423,7 +439,7 @@ function rotateLightboxImg() {
 	}
 }
 
-function closeLightbox() {
+function closeLightbox({pushState = true} = {}) {
 	const lightboxVid = document.getElementById('lightbox-vid');
 	lightboxVid.removeAttribute('src');
 	lightboxVid.load();
@@ -436,8 +452,10 @@ function closeLightbox() {
 	document.getElementById('lightbox-button-row').classList.remove('active');
 	document.getElementById('info-panel').classList.remove('active');
 
-	window.history.pushState({}, '', prevPathName);
-	prevPathName = '/';
+	if (pushState) {
+		window.history.pushState({}, '', prevPathName);
+		prevPathName = '/';
+	}
 
 	// Restore Scrolling
 	document.body.style.overflow = '';
@@ -446,13 +464,13 @@ function closeLightbox() {
 async function nextMedia() {
 	document.getElementById('lightbox-vid').removeAttribute('src');
 	currMediaIdx = (currMediaIdx + 1) % allMedia.size;
-	await openLightbox(currMediaIdx);
+	await openLightbox({idx: currMediaIdx});
 }
 
 async function prevMedia() {
 	document.getElementById('lightbox-vid').removeAttribute('src');
 	currMediaIdx = (currMediaIdx - 1 + allMedia.size) % allMedia.size;
-	await openLightbox(currMediaIdx);
+	await openLightbox({idx: currMediaIdx});
 }
 
 async function toggleInfoPanel() {
@@ -526,14 +544,14 @@ async function updateInfoPanel() {
 			["Path", createPathButtons(media.path) || 'Unknown']
 		])],
 		["Technical Details", new Map([
-			["Hash", media.hash],
+			["Hash", allMediaIdx[currMediaIdx]],
 			["Created", formatDate(media.dateCreated)],
 			["Modified", formatDate(media.dateModified)]
 		])],
 		["Gallery Info", new Map([
 			["Index", (currMediaIdx + 1) + ' of '  + allMedia.size],
 			["Display Size", Math.round(media.width || 0) + ' x ' + Math.round(media.height || 0)],
-			["Tags", await createInfoTagButtons(media.hash)],
+			["Tags", await createInfoTagButtons(allMediaIdx[currMediaIdx])],
 		])]
 	]);
 	infoContent.innerHTML = "";
@@ -641,7 +659,7 @@ function renderGallery() {
 			imgElement.title = img.name;
 			imgElement.loading = 'lazy'; // Works as fallback
 
-			imgElement.addEventListener('click', () => openLightbox(img.idx));
+			imgElement.addEventListener('click', () => openLightbox({idx: img.idx}));
 			container.appendChild(imgElement);
 
 			const checkbox = document.createElement('div');
@@ -734,7 +752,7 @@ async function addTag() {
 		data['tag'].push(t)
 	}
 	for (const idx of selectedItems) {
-		data['hashes'].push(allMedia.get(allMediaIdx[idx]).hash);
+		data['hashes'].push(allMediaIdx[idx]);
 	}
 
 	hideTagErr();
@@ -1003,7 +1021,7 @@ document.addEventListener('keydown', (e) => {
 			switch (e.key) {
 				case 'ArrowRight':
 				case 'ArrowLeft':
-					openLightbox(currMediaIdx);
+					openLightbox({idx: currMediaIdx});
 					break;
 				case 's':
 					SELECT_MODE_CHECKBOX.checked = true;
