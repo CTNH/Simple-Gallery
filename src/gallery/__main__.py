@@ -41,10 +41,17 @@ def initialize(config: dict):
 
     MEDIA_PATH_LEN = len(MEDIA_PATH)
 
+    # Directories to skip
+    skipPaths = (abspath(DATA_PATH))
     metadataList = []
+
     # Recursively list all files
-    for fpath in list(Path(MEDIA_PATH).rglob('*')):
+    for fpath in Path(MEDIA_PATH).rglob('*'):
         mediaPath = fspath(fpath)
+
+        if abspath(mediaPath).startswith(skipPaths):
+            continue
+
         metadata = MetaExtract(mediaPath)
         # Not supported; skip
         if metadata is None:
