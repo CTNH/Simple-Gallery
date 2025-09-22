@@ -73,6 +73,25 @@ def get_mediaInfo():
     return jsonify(resp)
 
 
+@bp.route('/media/<hash>/thumbnail/<tsize>')
+@cacheControl()
+def serve_sized_thumbnail(hash, tsize):
+    try:
+        tsize = int(tsize)
+    except ValueError:
+        abort(404)
+    if (
+        hash not in current_app.config['mediaPath'] or
+        tsize not in current_app.config['thumbnailSizes']
+    ):
+        abort(404)
+    return send_from_directory(
+        abspath(current_app.config['thumbnailDir']),
+        current_app.config['mediaPath'][hash]['thumbnailPrefix'] +
+        f"-{tsize}.jpg"
+    )
+
+
 @bp.route('/media/<hash>/thumbnail')
 @cacheControl()
 def serve_thumbnail(hash):
@@ -80,7 +99,8 @@ def serve_thumbnail(hash):
         abort(404)
     return send_from_directory(
         abspath(current_app.config['thumbnailDir']),
-        current_app.config['mediaPath'][hash]['thumbnail']
+        current_app.config['mediaPath'][hash]['thumbnailPrefix'] +
+        f"-{current_app.config['defaultThumbnailSize']}.jpg"
     )
 
 

@@ -115,7 +115,7 @@ def server(config: dict):
         thumbnailFolder=thumbnailsFolder,
         configFolder=config['config_dir'],
         dbPath=abspath(dbPath),
-        thumbnailSize=min(config["media"]["thumbnail_size"])
+        thumbnailSizes=config["media"]["thumbnail_size"]
     ).run(
         debug=True,
         host=config['server']['host'],

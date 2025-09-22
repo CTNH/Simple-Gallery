@@ -72,20 +72,24 @@ def createApp(
     thumbnailFolder: str,
     configFolder: str,
     dbPath: str,
-    thumbnailSize: int
+    thumbnailSizes: list[int]
 ) -> Flask:
     if not exists(dbPath):
         print(f'Database file {dbPath} not found.')
         return
 
-    def thumbnailPath(hash: str) -> (str, str):
+    defaultThumbnailSize = min(thumbnailSizes)
+
+    def thumbnailPrefix(hash: str) -> (str, str):
         return (
             f'{hash[:2]}/{hash[2:4]}/',
-            f'{hash[4:]}-{thumbnailSize}.jpg'
+            f'{hash[4:]}'
         )
 
     app.config['JSON_SORT_KEYS'] = False
 
+    app.config['thumbnailSizes'] = thumbnailSizes
+    app.config['defaultThumbnailSize'] = defaultThumbnailSize
     app.config['thumbnailDir'] = thumbnailFolder
     app.config['configDir'] = configFolder
 
@@ -113,7 +117,7 @@ def createApp(
                 'size': row[8]
             })
             app.config['mediaPath'][row[0]] = {
-                'thumbnail': ''.join(thumbnailPath(row[0])),
+                'thumbnailPrefix': ''.join(thumbnailPrefix(row[0])),
                 'original': row[1]
             }
 
