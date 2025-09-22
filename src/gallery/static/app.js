@@ -22,6 +22,8 @@ const TOAST_CONTAINER = document.getElementById('toast-container');
 const FIRST_TOAST = document.getElementById('first-toast');
 let lastToast = FIRST_TOAST;
 
+let prevPathName = '/';
+
 const Modes = {
 	none: 0,
 	lightbox: 1,
@@ -42,6 +44,11 @@ for (let i = 0; i < sheet.length; i++) {
 
 // Fetch images from API
 async function loadMedia({pushState = true} = {}) {
+	if (window.location.pathname.startsWith('/lightbox')) {
+		openLightbox();
+		return;
+	}
+
 	let path = null;
 	let tags = [];
 	// Parse link filters
@@ -86,6 +93,12 @@ async function removeActiveFilters({tags = []}) {
 async function updateAllTags() {
 	const tags = await getJSONCache('/api/tags', TAGS_CACHE);
 	const allTagsFilter = document.getElementById('filter-all-tags');
+
+	if (tags['data'].length === 0) {
+		allTagsFilter.innerText = 'None';
+		return
+	}
+
 	allTagsFilter.innerHTML = '';
 	tags['data'].forEach(tag => {
 		const a = document.createElement('a');
@@ -343,6 +356,11 @@ async function openLightbox(idx) {
 	currMediaIdx = idx;
 	activeMode = Modes.lightbox;
 
+	if (!(window.location.pathname.startsWith('/lightbox/'))) {
+		prevPathName = window.location.pathname + window.location.search;
+	}
+	window.history.pushState({}, '', '/lightbox/' + allMedia[idx].hash);
+
 	const lightboxImg = document.getElementById('lightbox-img');
 	const lightboxVid = document.getElementById('lightbox-vid');
 
@@ -407,6 +425,9 @@ function closeLightbox() {
 	document.getElementById('lightbox').classList.remove('active');
 	document.getElementById('lightbox-button-row').classList.remove('active');
 	document.getElementById('info-panel').classList.remove('active');
+
+	window.history.pushState({}, '', prevPathName);
+	prevPathName = '/';
 
 	// Restore Scrolling
 	document.body.style.overflow = '';

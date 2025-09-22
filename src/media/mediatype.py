@@ -19,7 +19,9 @@ VID_EXT = [
     ".mov",
     ".mp4",
     ".webm",
-    ".mkv"
+    ".mkv",
+    ".m4v",
+    "wmv"
 ]
 
 
