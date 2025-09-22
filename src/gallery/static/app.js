@@ -1,6 +1,7 @@
 import { clearCache, getJSONCache } from "./cache.js";
 
-let allMedia = [];
+let allMedia = new Map();
+let allMediaIdx = [];
 let allTags = {};
 const activeTags = new Set();
 const GALLERY_CONTAINER = document.getElementById('gallery');
@@ -45,6 +46,7 @@ for (let i = 0; i < sheet.length; i++) {
 // Fetch images from API
 async function loadMedia({pushState = true} = {}) {
 	if (window.location.pathname.startsWith('/lightbox')) {
+		// TODO
 		openLightbox();
 		return;
 	}
@@ -148,8 +150,10 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 			window.history.pushState({}, '', '/');
 		}
 
-		let response = await fetch(apiEndpoint);
-		allMedia = await response.json();
+		const response = await fetch(apiEndpoint);
+		const jsonResp = await response.json();
+		allMedia = new Map(jsonResp['data']);
+		allMediaIdx = Array.from(allMedia.keys());
 
 		const pathFilter = document.getElementById('filter-path');
 		pathFilter.innerHTML = 'Path';
@@ -175,7 +179,7 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 
 		updateStats();
 
-		if (allMedia.length === 0) {
+		if (allMedia.size === 0) {
 			GALLERY_CONTAINER.innerHTML = '<div class="error">No images found.</div>';
 		}
 		else {
@@ -257,7 +261,7 @@ async function createInfoTagButtons(hash) {
 }
 
 function updateStats() {
-	STATS_ELEM.textContent = `${allMedia.length} items • Window: ${window.innerWidth}x${window.innerHeight}px`;
+	STATS_ELEM.textContent = `${allMedia.size} items • Window: ${window.innerWidth}x${window.innerHeight}px`;
 }
 
 // Intersection Observer setup for lazy loading
@@ -282,28 +286,29 @@ function setupObserver() {
 }
 
 // Logic to decide row height and items in row
-function calculateRows(viewWidth, mediaInfo) {
+function calculateRows(viewWidth) {
 	// Magic number 200; fix with config
 	const targetRatio = viewWidth / 200;
 	const rows = [];
 	let lastImg = 0;
 
-	while (lastImg < mediaInfo.length) {
+	while (lastImg < allMedia.size) {
 		let prevRatioDiff = targetRatio;
 		let currTotalRatio = 0;
 		let colInRow = lastImg;
 
-		for (let idx = lastImg; idx < mediaInfo.length; idx++) {
-			currTotalRatio += mediaInfo[idx].aspectRatio;
+		for (let idx = lastImg; idx < allMedia.size; idx++) {
+			const currMedia = allMedia.get(allMediaIdx[idx]);
+			currTotalRatio += currMedia.aspectRatio;
 
 			// Current ratio diff > previous
 			if (Math.abs(targetRatio - currTotalRatio) > prevRatioDiff) {
-				currTotalRatio -= mediaInfo[idx].aspectRatio;
+				currTotalRatio -= currMedia.aspectRatio;
 
 				// If the single image is very wide
 				// Needed to prevent infinite loop
 				if (idx == lastImg) {
-					currTotalRatio = mediaInfo[idx].aspectRatio;
+					currTotalRatio = currMedia.aspectRatio;
 					colInRow = idx + 1;
 				} else {
 					colInRow = idx;
@@ -313,7 +318,7 @@ function calculateRows(viewWidth, mediaInfo) {
 			prevRatioDiff = Math.abs(targetRatio - currTotalRatio);
 
 			// If we've reached the end of images
-			if (idx === mediaInfo.length - 1) {
+			if (idx === allMedia.size - 1) {
 				colInRow = idx + 1;
 				break;
 			}
@@ -326,9 +331,11 @@ function calculateRows(viewWidth, mediaInfo) {
 		// Create row data
 		const rowImages = [];
 		for (let i = lastImg; i < colInRow; i++) {
-			const imgw = (mediaInfo[i].aspectRatio / currTotalRatio) * viewWidth;
+			const currMedia = allMedia.get(allMediaIdx[i]);
+			const imgw = (currMedia.aspectRatio / currTotalRatio) * viewWidth;
 			rowImages.push({
-				...mediaInfo[i],
+				hash: allMediaIdx[i],
+				...currMedia,
 				width: Math.max(50, imgw - 8), // Account for margin, min width
 				height: imgh,
 				idx: i
@@ -355,11 +362,12 @@ function calculateRows(viewWidth, mediaInfo) {
 async function openLightbox(idx) {
 	currMediaIdx = idx;
 	activeMode = Modes.lightbox;
+	const currMediaHash = allMediaIdx[idx];
 
 	if (!(window.location.pathname.startsWith('/lightbox/'))) {
 		prevPathName = window.location.pathname + window.location.search;
 	}
-	window.history.pushState({}, '', '/lightbox/' + allMedia[idx].hash);
+	window.history.pushState({}, '', '/lightbox/' + currMediaHash);
 
 	const lightboxImg = document.getElementById('lightbox-img');
 	const lightboxVid = document.getElementById('lightbox-vid');
@@ -367,16 +375,16 @@ async function openLightbox(idx) {
 	document.getElementById('lightbox').classList.add('active');
 	showLightboxButtons();
 
-	if (allMedia[idx].video === false) {
+	if (allMedia.get(currMediaHash).video === false) {
 		rotateLightboxImg();
-		lightboxImg.src = `/media/${allMedia[idx].hash}/original`;
-		lightboxImg.alt = allMedia[idx].name;
+		lightboxImg.src = `/media/${currMediaHash}/original`;
+		lightboxImg.alt = allMedia.get(currMediaHash).name;
 
 		lightboxImg.classList.add('active');
 		lightboxVid.classList.remove('active');
 	}
 	else {
-		lightboxVid.src = `/media/${allMedia[idx].hash}/original`;
+		lightboxVid.src = `/media/${currMediaHash}/original`;
 
 		lightboxVid.classList.add('active');
 		lightboxImg.classList.remove('active');
@@ -394,14 +402,16 @@ async function openLightbox(idx) {
 
 function rotateLightboxImg() {
 	const lightboxImg = document.getElementById('lightbox-img');
+	const currMediaHash = allMediaIdx[currMediaIdx];
 
 	lightboxImg.style.maxWidth = '90%';
 	lightboxImg.style.maxHeight = '96%';
-	if (allMedia[currMediaIdx].rotation !== null) {
-		lightboxImg.style.transform = 'rotate(' + allMedia[currMediaIdx].rotation + 'deg)';
+	const mediaRotation = allMedia.get(currMediaHash).rotation;
+	if (mediaRotation !== null) {
+		lightboxImg.style.transform = 'rotate(' + mediaRotation + 'deg)';
 		const infoPanelWidth = (infoPanelOpen) ? document.getElementById('info-panel').clientWidth : 0;
 
-		if (allMedia[currMediaIdx].rotation === 90 || allMedia[currMediaIdx].rotation === 270) {
+		if (mediaRotation === 90 || mediaRotation === 270) {
 			const lightbox = document.getElementById('lightbox');
 			// Swap width and height
 			lightboxImg.style.maxWidth = (lightbox.clientHeight*0.96) + 'px';
@@ -435,13 +445,13 @@ function closeLightbox() {
 
 async function nextMedia() {
 	document.getElementById('lightbox-vid').removeAttribute('src');
-	currMediaIdx = (currMediaIdx + 1) % allMedia.length;
+	currMediaIdx = (currMediaIdx + 1) % allMedia.size;
 	await openLightbox(currMediaIdx);
 }
 
 async function prevMedia() {
 	document.getElementById('lightbox-vid').removeAttribute('src');
-	currMediaIdx = (currMediaIdx - 1 + allMedia.length) % allMedia.length;
+	currMediaIdx = (currMediaIdx - 1 + allMedia.size) % allMedia.size;
 	await openLightbox(currMediaIdx);
 }
 
@@ -484,9 +494,9 @@ function isMobile() {
 }
 
 async function updateInfoPanel() {
-	if (!infoPanelOpen || currMediaIdx >= allMedia.length) return;
+	if (!infoPanelOpen || currMediaIdx >= allMedia.size) return;
 
-	const media = allMedia[currMediaIdx];
+	const media = allMedia.get(allMediaIdx[currMediaIdx]);
 	const infoContent = document.getElementById('info-content');
 
 	// Format file size
@@ -521,7 +531,7 @@ async function updateInfoPanel() {
 			["Modified", formatDate(media.dateModified)]
 		])],
 		["Gallery Info", new Map([
-			["Index", (currMediaIdx + 1) + ' of '  + allMedia.length],
+			["Index", (currMediaIdx + 1) + ' of '  + allMedia.size],
 			["Display Size", Math.round(media.width || 0) + ' x ' + Math.round(media.height || 0)],
 			["Tags", await createInfoTagButtons(media.hash)],
 		])]
@@ -564,9 +574,11 @@ async function rotate(deg) {
 	if (deg !== 90 && deg !== -90)
 		return;
 
+	const currMediaHash = allMediaIdx[currMediaIdx];
+
 	const direction = (deg === 90) ? '/right' : '/left';
 	const resp = await fetch(
-		'/api/rotate/' + allMedia[currMediaIdx].hash + direction,
+		'/api/rotate/' + currMediaHash + direction,
 		{method: 'POST'}
 	);
 	const jsonResp = await resp.json();
@@ -574,9 +586,9 @@ async function rotate(deg) {
 		return;
 
 	// Apply now
-	let rotation = allMedia[currMediaIdx].rotation;
+	let rotation = allMedia.get(currMediaHash).rotation;
 	rotation = (rotation == null) ? 0 : rotation;
-	allMedia[currMediaIdx].rotation = (rotation + deg + 360) % 360;
+	allMedia.get(currMediaHash).rotation = (rotation + deg + 360) % 360;
 	rotateLightboxImg();
 
 	// Update info panel if it's open
@@ -686,7 +698,7 @@ function handleResize() {
 	clearTimeout(resizeTimeout);
 	resizeTimeout = setTimeout(() => {
 		updateStats();
-		if (allMedia.length > 0) {
+		if (allMedia.size > 0) {
 			renderGallery();
 		}
 
@@ -722,7 +734,7 @@ async function addTag() {
 		data['tag'].push(t)
 	}
 	for (const idx of selectedItems) {
-		data['hashes'].push(allMedia[idx].hash);
+		data['hashes'].push(allMedia.get(allMediaIdx[idx]).hash);
 	}
 
 	hideTagErr();
@@ -801,7 +813,7 @@ function createToast(msg, bgColor) {
 }
 
 function selectModeSelectAll() {
-	for (let i=0; i<allMedia.length; i++) {
+	for (let i=0; i<allMedia.size; i++) {
 		selectedItems.add(i);
 	}
 	document.querySelectorAll('.selection-checkbox').forEach(e => {
@@ -811,7 +823,7 @@ function selectModeSelectAll() {
 }
 
 function selectModeDeselectAll() {
-	for (let i=0; i<allMedia.length; i++) {
+	for (let i=0; i<allMedia.size; i++) {
 		selectedItems.delete(i);
 	}
 	document.querySelectorAll('.selection-checkbox').forEach(e => {
@@ -955,7 +967,7 @@ document.addEventListener('keydown', (e) => {
 					break;
 				case 'a':
 					// Deselect all if all is selected
-					if (selectedItems.size === allMedia.length) {
+					if (selectedItems.size === allMedia.size) {
 						selectModeDeselectAll();
 					}
 					else {

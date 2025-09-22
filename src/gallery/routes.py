@@ -7,6 +7,7 @@ from gallery.extensions import db
 from sqlalchemy import distinct
 from gallery.media import getMediaInfo
 from functools import wraps
+from collections import OrderedDict
 
 bp = Blueprint('main_routes', __name__)
 
@@ -51,10 +52,9 @@ def get_mediaInfo():
         tagsFilter=tagsFilter
     )
 
-    mediaInfo = []
+    mediaInfo = OrderedDict()
     for row in rows:
-        mediaInfo.append({
-            'hash': row[0],
+        mediaInfo[row[0]] = {
             'name': basename(row[1]),
             'aspectRatio': row[2],
             'video': row[3],
@@ -64,8 +64,13 @@ def get_mediaInfo():
             'height': row[7],
             'path': row[1],
             'size': row[8]
-        })
-    return jsonify(mediaInfo)
+        }
+
+    resp = {
+        'success': True,
+        'data': list(mediaInfo.items())
+    }
+    return jsonify(resp)
 
 
 @bp.route('/media/<hash>/thumbnail')
