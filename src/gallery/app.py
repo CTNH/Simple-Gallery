@@ -84,6 +84,8 @@ def createApp(
             f'{hash[4:]}-{thumbnailSize}.jpg'
         )
 
+    app.config['JSON_SORT_KEYS'] = False
+
     app.config['thumbnailDir'] = thumbnailFolder
     app.config['configDir'] = configFolder
 

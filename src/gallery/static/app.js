@@ -43,8 +43,8 @@ for (let i = 0; i < sheet.length; i++) {
 }
 
 // Fetch media info from API
-async function updateAllMedia(apiEndpoint) {
-	const response = await fetch(apiEndpoint);
+async function updateAllMedia(queryParams='') {
+	const response = await fetch('/api/media' + queryParams);
 	const jsonResp = await response.json();
 	allMedia = new Map(jsonResp['data']);
 	allMediaIdx = Array.from(allMedia.keys());
@@ -56,7 +56,7 @@ async function loadMedia({pushState = true} = {}) {
 		if (allMedia.get(mediaHash, null) == null) {
 			await updateAllMedia();
 		}
-		openLightbox({hash: mediaHash, updateHistory: pushState});
+		await openLightbox({hash: mediaHash, updateHistory: pushState});
 
 		return;
 	}
@@ -147,20 +147,14 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 			activeTags.add(tag);
 		}
 
-		let apiEndpoint = '/api/media';
-		if (queryparam.length > 0) {
-			const joinedParams = "?" + queryparam.join('&');
-			apiEndpoint += joinedParams;
-
-			if (pushState) {
-				window.history.pushState({}, '', '/search' + joinedParams);
-			}
+		const joinedParams = queryparam.length > 0 ? ("?" + queryparam.join('&')) : '';
+		await updateAllMedia(joinedParams);
+		if (pushState) {
+			window.history.pushState(
+				{}, '',
+				queryparam.length > 0 ? ('/search' + joinedParams) : '/'
+			);
 		}
-		else if (pushState) {
-			window.history.pushState({}, '', '/');
-		}
-
-		await updateAllMedia(apiEndpoint);
 
 		const pathFilter = document.getElementById('filter-path');
 		pathFilter.innerHTML = 'Path';
