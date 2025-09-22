@@ -760,18 +760,13 @@ async function addTag() {
 			body: JSON.stringify(data),
 		});
 
-		if (!response.ok) {
-			throw new Error(`Server error: ${response.status}`);
+		const resp = await response.json();
+		if (!response.ok || !resp['success']) {
+			throw new Error(resp['msg']);
 		}
 
 		// Clear tag cache
 		await clearCache(TAGS_CACHE);
-
-		const resp = await response.json();
-		if (!resp['success']) {
-			showTagErr("Error adding tag!");
-			return;
-		}
 
 		updateAllTags();
 
@@ -783,14 +778,14 @@ async function addTag() {
 		return;
 
 	} catch (error) {
-		showTagErr("Error sending data: " + error);
+		showTagErr("Error adding tag:<br>" + error.message);
 	}
 }
 
 function showTagErr(msg) {
 	let tagError = document.getElementById('tag-error');
 	tagError.classList.add('active');
-	tagError.innerText = msg;
+	tagError.innerHTML = msg;
 }
 function hideTagErr() {
 	let tagError = document.getElementById('tag-error');

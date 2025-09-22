@@ -169,10 +169,23 @@ def addTag():
             'error': 'No JSON data received'
         }), 400
 
-    tags = data.get('tag', [])
     hashes = data.get('hashes', [])
+    if hashes == []:
+        return jsonify({
+            'success': False,
+            'msg': "At least one media must be selected!"
+        }), 400
+    tags = data.get('tag', [])
+    forbiddenChars = {
+        '&', '='
+    }
     rows = []
     for tag in tags:
+        if any(c in tag for c in forbiddenChars):
+            return jsonify({
+                'success': False,
+                'msg': f"Characters {','.join(forbiddenChars)} not allowed!"
+            }), 400
         mediaWithTag = (
             MediaTag.query
             .with_entities(MediaTag.hash)
