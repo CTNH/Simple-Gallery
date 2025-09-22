@@ -86,6 +86,7 @@ def createApp(
             f'{hash[4:]}'
         )
 
+    app.config['media_cache'] = {}
     app.config['JSON_SORT_KEYS'] = False
 
     app.config['thumbnailSizes'] = thumbnailSizes

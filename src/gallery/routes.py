@@ -31,20 +31,28 @@ def index():
     return render_template('gallery.html')
 
 
+@bp.route('/lightbox/<hash>')
+def lightbox(hash):
+    return render_template('gallery.html')
+
+
 @bp.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory("static", filename)
 
 
 @bp.route('/api/media')
-@cacheControl()
 def get_mediaInfo():
     """API endpoint to get all images with their aspect ratios"""
     pathFilter = frequest.args.get('path', default=None)
     tagsFilter = frequest.args.getlist('tag')
+    cacheKey = (pathFilter, frozenset(tagsFilter))
 
     if pathFilter is not None:
         pathFilter = f"{pathFilter}%"
+
+    if cacheKey in current_app.config['media_cache']:
+        return current_app.config['media_cache'][cacheKey]
 
     # Get media list from database
     rows = getMediaInfo(
@@ -70,7 +78,8 @@ def get_mediaInfo():
         'success': True,
         'data': list(mediaInfo.items())
     }
-    return jsonify(resp)
+    current_app.config['media_cache'][cacheKey] = jsonify(resp)
+    return current_app.config['media_cache'][cacheKey]
 
 
 @bp.route('/media/<hash>/thumbnail/<tsize>')
