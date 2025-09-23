@@ -268,7 +268,6 @@ def removeTag():
             'success': False,
             'msg': "At least one tag must be provided as a list!"
         }), 400
-        pass
 
     for tag in tags:
         db.session.query(MediaTag).filter(MediaTag.tag == tag).delete()
@@ -297,9 +296,31 @@ def renameTag():
     newTag = data.get('new_tag', None)
 
     if not oldTag or not newTag:
-        pass
+        return jsonify({
+            'success': False,
+            'msg': "Both old and new tags must be provided!"
+        }), 400
 
-    # TODO
+    rows = MediaTag.query.filter_by(tag=oldTag).all()
+
+    # Remove existing to prevent primary key collision
+    MediaTag.query.filter(
+        MediaTag.tag == newTag,
+        MediaTag.hash.in_(
+            {row.hash for row in rows}
+        )
+    ).delete(synchronize_session=False)
+
+    for row in rows:
+        row.tag = newTag
+        db.session.add(row)
+
+    success, error = safeCommit()
+    if not success:
+        return jsonify({
+            'success': False,
+            'msg': error
+        }), 400
 
     return jsonify({
         'success': True,

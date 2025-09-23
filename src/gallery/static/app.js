@@ -852,7 +852,42 @@ async function addTag() {
 	}
 }
 
-async function editTag() {}
+async function editTag() {
+	let data = {
+		'old_tag': currentTagEdit,
+		'new_tag': document.getElementById('input-input').value
+	};
+
+	try {
+		const response = await fetch('/api/tags', {
+			method: 'PUT',
+			headers: {
+				'Content-Type': "application/json",
+			},
+			body: JSON.stringify(data),
+		});
+
+		const resp = await response.json();
+		if (!response.ok || !resp['success']) {
+			throw new Error(resp['msg']);
+		}
+
+		// Clear tag cache
+		await clearCache(TAGS_CACHE);
+
+		updateAllTags();
+
+		closeTagPrompt();
+		createToast(
+			`Successfully edited ${data['old_tag']} as ${data['new_tag']}`,
+			'#4ad466'
+		);
+		return;
+
+	} catch (error) {
+		showInputErr("Error editing tag:<br>" + error.message);
+	}
+}
 
 async function removeTag() {
 	let data = {
