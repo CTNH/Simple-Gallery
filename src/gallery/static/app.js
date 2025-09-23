@@ -805,25 +805,10 @@ function handleInputCancel() {
 	}
 }
 
-async function addTag() {
-	selectedItems;
-	let data = {
-		'tag': [],
-		'hashes': []
-	};
-
-	for (const t of document.getElementById('input-input').value.split(' ')) {
-		data['tag'].push(t)
-	}
-	for (const idx of selectedItems) {
-		data['hashes'].push(allMediaIdx[idx]);
-	}
-
-	hideInputErr();
-
+async function tagPromptRequest({data, method, toastMsg, errorPrefix}) {
 	try {
 		const response = await fetch('/api/tags', {
-			method: 'POST',
+			method: method,
 			headers: {
 				'Content-Type': "application/json",
 			},
@@ -841,15 +826,32 @@ async function addTag() {
 		updateAllTags();
 
 		closeTagPrompt();
-		createToast(
-			`Successfully added ${data['tag'].length} tags to ${data['hashes'].length} items`,
-			'#4ad466'
-		);
-		return;
 
+		createToast(toastMsg, '#4ad466');
 	} catch (error) {
-		showInputErr("Error adding tag:<br>" + error.message);
+		showInputErr(errorPrefix + error.message);
 	}
+}
+
+async function addTag() {
+	let data = {
+		'tag': [],
+		'hashes': []
+	};
+
+	for (const t of document.getElementById('input-input').value.split(' ')) {
+		data['tag'].push(t);
+	}
+	for (const idx of selectedItems) {
+		data['hashes'].push(allMediaIdx[idx]);
+	}
+
+	tagPromptRequest({
+		data: data,
+		method: 'POST',
+		toastMsg: `Successfully added ${data['tag'].length} tags to ${data['hashes'].length} items`,
+		errorPrefix: "Error adding tag:<br>"
+	});
 }
 
 async function editTag() {
@@ -858,35 +860,12 @@ async function editTag() {
 		'new_tag': document.getElementById('input-input').value
 	};
 
-	try {
-		const response = await fetch('/api/tags', {
-			method: 'PUT',
-			headers: {
-				'Content-Type': "application/json",
-			},
-			body: JSON.stringify(data),
-		});
-
-		const resp = await response.json();
-		if (!response.ok || !resp['success']) {
-			throw new Error(resp['msg']);
-		}
-
-		// Clear tag cache
-		await clearCache(TAGS_CACHE);
-
-		updateAllTags();
-
-		closeTagPrompt();
-		createToast(
-			`Successfully edited ${data['old_tag']} as ${data['new_tag']}`,
-			'#4ad466'
-		);
-		return;
-
-	} catch (error) {
-		showInputErr("Error editing tag:<br>" + error.message);
-	}
+	tagPromptRequest({
+		data: data,
+		method: 'PUT',
+		toastMsg: `Successfully edited ${data['old_tag']} as ${data['new_tag']}`,
+		errorPrefix: "Error editing tag:<br>"
+	});
 }
 
 async function removeTag() {
@@ -894,35 +873,12 @@ async function removeTag() {
 		'tags': [currentTagEdit]
 	};
 
-	try {
-		const response = await fetch('/api/tags', {
-			method: 'DELETE',
-			headers: {
-				'Content-Type': "application/json",
-			},
-			body: JSON.stringify(data),
-		});
-
-		const resp = await response.json();
-		if (!response.ok || !resp['success']) {
-			throw new Error(resp['msg']);
-		}
-
-		// Clear tag cache
-		await clearCache(TAGS_CACHE);
-
-		updateAllTags();
-
-		closeTagPrompt();
-		createToast(
-			`Successfully removed ${data['tags'].length} tags`,
-			'#4ad466'
-		);
-		return;
-
-	} catch (error) {
-		showInputErr("Error removing tag:<br>" + error.message);
-	}
+	tagPromptRequest({
+		data: data,
+		method: 'DELETE',
+		toastMsg: `Successfully removed ${data['tags'].length} tags`,
+		errorPrefix: "Error removing tag:<br>"
+	});
 }
 
 function showInputErr(msg) {
