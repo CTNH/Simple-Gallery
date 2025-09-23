@@ -10,15 +10,19 @@
 </head>
 <body>
 	<div class="header">
-		<h1><a href='/'>Media Gallery</a></h1>
-		<p id="filter-path"></p>
+		<h3 class="header-title"><a href='/'>Media Gallery</a></h3>
+		<a class="header-item" id="header-item-folder">Folders</a>
+		<a class="header-item" id="header-item-video">Video</a>
+		<a class="header-item" id="header-item-edit-tags">Edit Tags</a>
 	</div>
 
-	<div class="filter-tag-container">
-		<div class="filter-tags-header">All Tags</div>
-		<div class="filter-tags" id="filter-all-tags"></div>
-		<div class="filter-tags-header">Active Tags</div>
-		<div class="filter-tags" id="filter-active-tags"></div>
+	<div class="filter-container">
+		<div class="filter-header">Path</div>
+		<div class="filter-values" id="filter-path"></div>
+		<div class="filter-header">All Tags</div>
+		<div class="filter-values" id="filter-all-tags"></div>
+		<div class="filter-header">Active Tags</div>
+		<div class="filter-values" id="filter-active-tags"></div>
 	</div>
 	<div class="stats" id="stats">Loading...</div>
 
@@ -26,6 +30,7 @@
 		<div class="loading">Loading images...</div>
 	</div>
 
+	<!-- Toast -->
 	<div id="toast-container">
 		<div id="first-toast"></div>
 	</div>

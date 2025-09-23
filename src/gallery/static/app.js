@@ -157,7 +157,7 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 		}
 
 		const pathFilter = document.getElementById('filter-path');
-		pathFilter.innerHTML = 'Path';
+		pathFilter.innerHTML = '';
 		pathFilter.appendChild(createPathButtons(path));
 
 		updateAllTags();
