@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from os.path import exists, basename
+from os.path import exists, basename, abspath
 from gallery.extensions import db
 from gallery.models import Media, MediaPath
 from gallery.routes import bp
@@ -92,7 +92,7 @@ def createApp(
     app.config['thumbnailSizes'] = thumbnailSizes
     app.config['defaultThumbnailSize'] = defaultThumbnailSize
     app.config['thumbnailDir'] = thumbnailFolder
-    app.config['configDir'] = configFolder
+    app.config['configDir'] = abspath(configFolder)
 
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{dbPath}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

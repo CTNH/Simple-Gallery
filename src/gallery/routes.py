@@ -122,7 +122,6 @@ def serve_originalMedia(hash):
     original_path = current_app.config['mediaPath'][hash]['original']
     # Path is relative
     if not isabs(original_path):
-        # Convert to absolute path based on current working directory
         original_path = pathJoin(
             current_app.config['configDir'],
             original_path
