@@ -493,7 +493,7 @@ body {
 	}
 }
 
-.tag-overlay {
+.input-overlay {
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -509,12 +509,12 @@ body {
 	pointer-events: none;
 }
 
-.tag-overlay.active {
+.input-overlay.active {
 	opacity: 1;
 	pointer-events: all;
 }
 
-.tag-prompt {
+.input-prompt {
 	display: block;
 	flex-direction: column;
 	max-width: 100%;
@@ -526,12 +526,12 @@ body {
 	z-index: 1100;
 }
 
-.tag-info {
+.input-info {
 	padding: 10px;
 	margin:5px;
 }
 
-#tag-input {
+#input-input {
 	width: 100%;
 	padding: 8px;
 	border: 1px solid rgba(255,255,255, 0.6);
@@ -541,7 +541,7 @@ body {
 	color: white;
 }
 
-#tag-error {
+#input-error {
 	padding: 0px;
 	margin: 0px;
 	padding-left: 10px;
@@ -549,12 +549,12 @@ body {
 	transition: all 0.3s ease;
 	color: #f04444;
 }
-#tag-error.active {
+#input-error.active {
 	padding: 10px;
 	margin: 5px;
 }
 
-.tag-action {
+.input-action {
 	width: 100%;
 	background: rgb(70, 70, 70);
 	justify-content: right;
@@ -562,7 +562,7 @@ body {
 	border-radius: 0 0 8px 8px;
 }
 
-.tag-action button {
+.input-action button {
 	background: rgb(70, 70, 70);
 	color: white;
 	border: none;
@@ -573,7 +573,7 @@ body {
 	transition: background 0.2s;
 }
 
-.tag-action button:hover {
+.input-action button:hover {
 	background: rgba(255, 255, 255, 0.2);
 	background: rgba(0,0,0, 0.2);
 }

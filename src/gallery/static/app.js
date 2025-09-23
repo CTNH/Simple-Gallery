@@ -29,7 +29,8 @@ const Modes = {
 	none: 0,
 	lightbox: 1,
 	select: 2,
-	tagprompt: 3
+	tagprompt: 3,
+	tagedit: 4
 };
 let activeMode = Modes.none;
 let lastActiveMode = Modes.none;
@@ -253,12 +254,23 @@ async function createInfoTagButtons(hash) {
 		const tagButton = document.createElement('a');
 		tagButton.innerText = tag;
 		tagButton.addEventListener('click', () => {
-			addActiveFilters({ tags: [tag] });
+			handleTagButton(tag);
 		});
 
 		container.appendChild(tagButton);
 	}
 	return container;
+}
+
+function editTag(tag) {
+}
+
+function handleTagButton(tag) {
+	if (activeMode === Modes.tagedit) {
+		editTag(tag);
+		return;
+	}
+	addActiveFilters({tags: [tag]});
 }
 
 function updateStats() {
@@ -501,10 +513,6 @@ function closeInfoPanel() {
 	infoButton.classList.remove('active');
 }
 
-function isMobile() {
-	return window.innerWidth <= 768;
-}
-
 async function updateInfoPanel() {
 	if (!infoPanelOpen || currMediaIdx >= allMedia.size) return;
 
@@ -722,17 +730,29 @@ function handleResize() {
 }
 
 function openTagPrompt() {
-	document.getElementById('tag-overlay').classList.add('active');
-	const input = document.getElementById('tag-input');
+	document.getElementById('input-overlay').classList.add('active');
+	const input = document.getElementById('input-input');
 	lastActiveMode = activeMode;
 	activeMode = Modes.tagprompt;
 	input.select();
 }
 function closeTagPrompt() {
-	hideTagErr();
-	document.getElementById('tag-overlay').classList.remove('active');
-	document.getElementById('tag-input').blur();
+	hideInputErr();
+	document.getElementById('input-overlay').classList.remove('active');
+	document.getElementById('input-input').blur();
 	activeMode = lastActiveMode;
+}
+
+async function handleInputConfirm() {
+	if (activeMode === Modes.tagprompt) {
+		await addTag();
+	}
+}
+
+function handleInputCancel() {
+	if (activeMode === Modes.tagprompt) {
+		closeTagPrompt();
+	}
 }
 
 async function addTag() {
@@ -742,14 +762,14 @@ async function addTag() {
 		'hashes': []
 	};
 
-	for (const t of document.getElementById('tag-input').value.split(' ')) {
+	for (const t of document.getElementById('input-input').value.split(' ')) {
 		data['tag'].push(t)
 	}
 	for (const idx of selectedItems) {
 		data['hashes'].push(allMediaIdx[idx]);
 	}
 
-	hideTagErr();
+	hideInputErr();
 
 	try {
 		const response = await fetch('/api/tags', {
@@ -778,17 +798,17 @@ async function addTag() {
 		return;
 
 	} catch (error) {
-		showTagErr("Error adding tag:<br>" + error.message);
+		showInputErr("Error adding tag:<br>" + error.message);
 	}
 }
 
-function showTagErr(msg) {
-	let tagError = document.getElementById('tag-error');
-	tagError.classList.add('active');
-	tagError.innerHTML = msg;
+function showInputErr(msg) {
+	let inputError = document.getElementById('input-error');
+	inputError.classList.add('active');
+	inputError.innerHTML = msg;
 }
-function hideTagErr() {
-	let tagError = document.getElementById('tag-error');
+function hideInputErr() {
+	let tagError = document.getElementById('input-error');
 	tagError.classList.remove('active');
 	tagError.innerText = '';
 }
@@ -817,6 +837,15 @@ function createToast(msg, bgColor) {
 			TOAST_CONTAINER.removeChild(toast);
 		}, 600);
 	}, 4000);
+}
+
+function toggleEditMode() {
+	if (activeMode === Modes.none) {
+		activeMode = Modes.tagedit;
+	}
+	else if (activeMode === Modes.tagedit) {
+		activeMode = Modes.none;
+	}
 }
 
 function selectModeSelectAll() {
@@ -880,11 +909,11 @@ document.getElementById('select-mode-select-all').addEventListener('click', () =
 document.getElementById('select-mode-open-tags').addEventListener('click', () => {
 	openTagPrompt();
 });
-document.getElementById('tag-action-close').addEventListener('click', () => {
-	closeTagPrompt();
+document.getElementById('input-action-cancel').addEventListener('click', () => {
+	handleInputCancel();
 });
-document.getElementById('tag-action-add').addEventListener('click', () => {
-	addTag();
+document.getElementById('input-action-confirm').addEventListener('click', () => {
+	handleInputConfirm();
 });
 document.getElementById('lightbox-close').addEventListener('click', () => {
 	closeLightbox();
@@ -910,6 +939,9 @@ document.getElementById('info-panel-close').addEventListener('click', () => {
 document.getElementById('scroll-to-top-button').addEventListener('click', () => {
 	window.scrollTo({top: 0, behavior: 'smooth'});
 });
+document.getElementById('header-item-edit-tags').addEventListener('click', () => {
+	toggleEditMode();
+});
 /*
 document.getElementById('').addEventListener('click', () => {
 });
@@ -921,9 +953,9 @@ document.getElementById('lightbox-media-container').addEventListener('click', (e
 		closeLightbox();
 	}
 });
-document.getElementById('tag-overlay').addEventListener('click', (e) => {
-	if (e.target.id === 'tag-overlay') {
-		closeTagPrompt();
+document.getElementById('input-overlay').addEventListener('click', (e) => {
+	if (e.target.id === 'input-overlay') {
+		handleInputCancel();
 	}
 });
 
@@ -939,9 +971,9 @@ document.getElementById('tag-overlay').addEventListener('click', (e) => {
 	})
 );
 
-document.getElementById('tag-input').addEventListener('keydown', e => {
+document.getElementById('input-input').addEventListener('keydown', e => {
 	if (e.key === 'Enter') {
-		addTag();
+		handleInputConfirm();
 	}
 });
 
