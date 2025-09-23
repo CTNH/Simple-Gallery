@@ -100,6 +100,10 @@ body {
 	background: rgb(120, 120, 120);
 }
 
+.header-item.active {
+	background: rgba(164, 70, 240, 1);
+}
+
 .stats {
 	margin-top: 20px;
 	text-align: center;

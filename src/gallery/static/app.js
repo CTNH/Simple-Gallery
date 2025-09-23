@@ -16,6 +16,8 @@ let selectedItems = new Set();
 let mouseDown = false;
 let checkSelect = true;
 
+let currentTagEdit = '';
+
 let currentPath = null;
 const TAGS_CACHE = 'tags-cache';
 
@@ -117,7 +119,7 @@ async function updateAllTags() {
 		const a = document.createElement('a');
 		a.textContent = tag;
 		a.addEventListener('click', () => {
-			addActiveFilters({ tags: [tag] });
+			handleTagButton(tag);
 		});
 		allTagsFilter.appendChild(a);
 	});
@@ -131,6 +133,8 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 
 	activeMode = Modes.select;
 	toggleSelectionMode();
+	// Reset tag edit
+	document.getElementById('header-item-edit-tags').classList.remove('active');
 
 	closeLightbox({pushState: pushState});
 
@@ -262,12 +266,32 @@ async function createInfoTagButtons(hash) {
 	return container;
 }
 
-function editTag(tag) {
+function openTagEditPrompt(tag) {
+	currentTagEdit = tag;
+	openInputPrompt({
+		header: "Edit '" + tag + "' Tag",
+		placeholder: "Tag name",
+		value: tag
+	});
+}
+
+function openInputPrompt({header, placeholder, value=''}) {
+	document.getElementById('input-info-header').innerText = header;
+	const input = document.getElementById('input-input');
+	input.placeholder = placeholder;
+	input.value = value;
+	document.getElementById('input-overlay').classList.add('active');
+	input.select();
+}
+
+function closeInputPrompt() {
+	hideInputErr();
+	document.getElementById('input-overlay').classList.remove('active');
 }
 
 function handleTagButton(tag) {
 	if (activeMode === Modes.tagedit) {
-		editTag(tag);
+		openTagEditPrompt(tag);
 		return;
 	}
 	addActiveFilters({tags: [tag]});
@@ -729,17 +753,23 @@ function handleResize() {
 	}, 350);
 }
 
+let lastTagPromptInput = "";
+
 function openTagPrompt() {
-	document.getElementById('input-overlay').classList.add('active');
-	const input = document.getElementById('input-input');
 	lastActiveMode = activeMode;
 	activeMode = Modes.tagprompt;
-	input.select();
+	openInputPrompt({
+		header: "Add Tags",
+		placeholder: "Tag name",
+		value: lastTagPromptInput
+	});
 }
+
 function closeTagPrompt() {
-	hideInputErr();
-	document.getElementById('input-overlay').classList.remove('active');
-	document.getElementById('input-input').blur();
+	const input = document.getElementById('input-input');
+	lastTagPromptInput = input.value;
+	closeInputPrompt();
+	input.blur();	// Unfocus
 	activeMode = lastActiveMode;
 }
 
@@ -747,11 +777,23 @@ async function handleInputConfirm() {
 	if (activeMode === Modes.tagprompt) {
 		await addTag();
 	}
+	else if (activeMode === Modes.tagedit) {
+		await editTag();
+	}
 }
 
 function handleInputCancel() {
-	if (activeMode === Modes.tagprompt) {
-		closeTagPrompt();
+	switch (activeMode) {
+		case Modes.tagedit:
+			closeInputPrompt();
+			break;
+
+		case Modes.tagprompt:
+			closeTagPrompt();
+			break;
+
+		default:
+			break;
 	}
 }
 
@@ -802,15 +844,18 @@ async function addTag() {
 	}
 }
 
+async function editTag() {}
+
+
 function showInputErr(msg) {
 	let inputError = document.getElementById('input-error');
 	inputError.classList.add('active');
 	inputError.innerHTML = msg;
 }
 function hideInputErr() {
-	let tagError = document.getElementById('input-error');
-	tagError.classList.remove('active');
-	tagError.innerText = '';
+	let inputError = document.getElementById('input-error');
+	inputError.classList.remove('active');
+	inputError.innerText = '';
 }
 
 function createToast(msg, bgColor) {
@@ -839,11 +884,14 @@ function createToast(msg, bgColor) {
 	}, 4000);
 }
 
-function toggleEditMode() {
+function toggleTagEditMode() {
+	const headerButton = document.getElementById('header-item-edit-tags');
 	if (activeMode === Modes.none) {
 		activeMode = Modes.tagedit;
+		headerButton.classList.add('active');
 	}
 	else if (activeMode === Modes.tagedit) {
+		headerButton.classList.remove('active');
 		activeMode = Modes.none;
 	}
 }
@@ -940,7 +988,7 @@ document.getElementById('scroll-to-top-button').addEventListener('click', () => 
 	window.scrollTo({top: 0, behavior: 'smooth'});
 });
 document.getElementById('header-item-edit-tags').addEventListener('click', () => {
-	toggleEditMode();
+	toggleTagEditMode();
 });
 /*
 document.getElementById('').addEventListener('click', () => {
@@ -1037,6 +1085,17 @@ document.addEventListener('keydown', (e) => {
 			}
 			break;
 
+		case Modes.tagedit:
+			switch(e.key) {
+				case 'e':
+					if (e.target.id === 'input-input') {
+						break;
+					}
+					toggleTagEditMode();
+					break;
+			}
+			break;
+
 		case Modes.none:
 		default:
 			switch (e.key) {
@@ -1047,6 +1106,9 @@ document.addEventListener('keydown', (e) => {
 				case 's':
 					SELECT_MODE_CHECKBOX.checked = true;
 					toggleSelectionMode();
+					break;
+				case 'e':
+					toggleTagEditMode();
 					break;
 			}
 			break;
