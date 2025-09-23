@@ -37,6 +37,8 @@ const Modes = {
 let activeMode = Modes.none;
 let lastActiveMode = Modes.none;
 
+let handleInputExtra = null;
+
 const lightboxVid = document.getElementById('lightbox-vid');
 
 let cssRules = {};
@@ -268,6 +270,11 @@ async function createInfoTagButtons(hash) {
 
 function openTagEditPrompt(tag) {
 	currentTagEdit = tag;
+	const removeButton = document.getElementById('input-action-extra');
+	removeButton.innerText = "Remove";
+	removeButton.classList.add('active');
+	handleInputExtra = removeTag;
+
 	openInputPrompt({
 		header: "Edit '" + tag + "' Tag",
 		placeholder: "Tag name",
@@ -786,6 +793,7 @@ function handleInputCancel() {
 	switch (activeMode) {
 		case Modes.tagedit:
 			closeInputPrompt();
+			document.getElementById('input-action-extra').classList.remove('active');
 			break;
 
 		case Modes.tagprompt:
@@ -846,6 +854,41 @@ async function addTag() {
 
 async function editTag() {}
 
+async function removeTag() {
+	let data = {
+		'tags': [currentTagEdit]
+	};
+
+	try {
+		const response = await fetch('/api/tags', {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': "application/json",
+			},
+			body: JSON.stringify(data),
+		});
+
+		const resp = await response.json();
+		if (!response.ok || !resp['success']) {
+			throw new Error(resp['msg']);
+		}
+
+		// Clear tag cache
+		await clearCache(TAGS_CACHE);
+
+		updateAllTags();
+
+		closeTagPrompt();
+		createToast(
+			`Successfully removed ${data['tags'].length} tags`,
+			'#4ad466'
+		);
+		return;
+
+	} catch (error) {
+		showInputErr("Error removing tag:<br>" + error.message);
+	}
+}
 
 function showInputErr(msg) {
 	let inputError = document.getElementById('input-error');
@@ -957,12 +1000,17 @@ document.getElementById('select-mode-select-all').addEventListener('click', () =
 document.getElementById('select-mode-open-tags').addEventListener('click', () => {
 	openTagPrompt();
 });
+
+document.getElementById('input-action-extra').addEventListener('click', () => {
+	handleInputExtra();
+});
 document.getElementById('input-action-cancel').addEventListener('click', () => {
 	handleInputCancel();
 });
 document.getElementById('input-action-confirm').addEventListener('click', () => {
 	handleInputConfirm();
 });
+
 document.getElementById('lightbox-close').addEventListener('click', () => {
 	closeLightbox();
 });

@@ -146,13 +146,11 @@ def rotateImage(hash, direction):
         }), 400
 
     media.rotation = ((media.rotation or 0) + directions[direction]) % 360
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
+    success, error = safeCommit()
+    if not success:
         return jsonify({
             'success': False,
-            'msg': e
+            'msg': error
         }), 400
 
     # Rotate current session
@@ -188,6 +186,15 @@ def getTags():
     })
 
 
+def safeCommit() -> (bool, Exception):
+    try:
+        db.session.commit()
+        return (True, None)
+    except Exception as e:
+        db.session.rollback()
+        return (False, e)
+
+
 @bp.route('/api/tags', methods=['POST'])
 def addTag():
     data = frequest.get_json()
@@ -198,12 +205,17 @@ def addTag():
         }), 400
 
     hashes = data.get('hashes', [])
-    if hashes == []:
+    tags = data.get('tag', [])
+    if (
+        hashes == [] or
+        tags == [] or
+        type(hashes) is not list or
+        type(tags) is not list
+    ):
         return jsonify({
             'success': False,
-            'msg': "At least one media must be selected!"
+            'msg': "At least one media and tag must be selected!"
         }), 400
-    tags = data.get('tag', [])
     forbiddenChars = {
         '&', '='
     }
@@ -229,14 +241,65 @@ def addTag():
                 tag=tag
             ))
     db.session.add_all(rows)
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
+    success, error = safeCommit()
+    if not success:
         return jsonify({
             'success': False,
-            'msg': e
+            'msg': error
         }), 400
+
+    return jsonify({
+        'success': True,
+    }), 200
+
+
+@bp.route('/api/tags', methods=['DELETE'])
+def removeTag():
+    data = frequest.get_json()
+    if not data:
+        return jsonify({
+            'success': False,
+            'error': 'No JSON data received'
+        }), 400
+
+    tags = data.get('tags', [])
+    if tags == [] or type(tags) is not list:
+        return jsonify({
+            'success': False,
+            'msg': "At least one tag must be provided as a list!"
+        }), 400
+        pass
+
+    for tag in tags:
+        db.session.query(MediaTag).filter(MediaTag.tag == tag).delete()
+    success, error = safeCommit()
+    if not success:
+        return jsonify({
+            'success': False,
+            'msg': error
+        }), 400
+
+    return jsonify({
+        'success': True,
+    }), 200
+
+
+@bp.route('/api/tags', methods=['PUT'])
+def renameTag():
+    data = frequest.get_json()
+    if not data:
+        return jsonify({
+            'success': False,
+            'error': 'No JSON data received'
+        }), 400
+
+    oldTag = data.get('old_tag', None)
+    newTag = data.get('new_tag', None)
+
+    if not oldTag or not newTag:
+        pass
+
+    # TODO
 
     return jsonify({
         'success': True,
