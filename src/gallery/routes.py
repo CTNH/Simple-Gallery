@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, send_from_directory, send_file
 from flask import abort, request as frequest, make_response, jsonify
-from flask import current_app
+from flask import current_app, Response
 from os.path import isabs, join as pathJoin, basename, abspath
 from gallery.models import Media, MediaTag
 from gallery.extensions import db
@@ -8,6 +8,7 @@ from sqlalchemy import distinct
 from gallery.media import getMediaInfo
 from functools import wraps
 from collections import OrderedDict
+from re import match as reMatch
 
 bp = Blueprint('main_routes', __name__)
 
@@ -130,7 +131,52 @@ def serve_originalMedia(hash):
             current_app.config['configDir'],
             original_path
         )
-    return send_file(original_path)
+
+    # If not video
+    media = Media.query.filter_by(hash=hash).first()
+    if not media or not media.video:
+        return send_file(original_path)
+
+    CHUNK_SIZE = 4 * 1024 * 1024    # 4MB
+    rangeHeader = frequest.headers.get('Range', default=None)
+
+    byteStart, byteEnd = 0, 0
+    # Default to first chunk with no range header
+    if not rangeHeader:
+        byteEnd = min(CHUNK_SIZE - 1, media.size - 1)
+    else:
+        # Parse Range header
+        range_match = reMatch(r'bytes=(\d+)-(\d*)', rangeHeader)
+        if range_match:
+            groups = range_match.groups()
+            byteStart = int(groups[0])
+            if groups[1]:
+                byteEnd = int(groups[1])
+            else:
+                byteEnd = min(byteStart + CHUNK_SIZE - 1, media.size - 1)
+        else:
+            # If Range header is malformed
+            abort(416)  # Requested Range Not Satisfiable
+
+    contentLength = byteEnd - byteStart + 1
+    with open(original_path, 'rb') as f:
+        f.seek(byteStart)
+        data = f.read(contentLength)
+
+    resp = Response(
+        data,
+        status=206,
+        mimetype='video/mp4',
+        direct_passthrough=True
+    )
+    resp.headers.add(
+        'Content-Range',
+        f'bytes {byteStart}-{byteEnd}/{media.size}'
+    )
+    resp.headers.add('Accept-Ranges', 'bytes')
+    resp.headers.add('Content-Length', str(contentLength))
+
+    return resp
 
 
 @bp.route(
