@@ -94,6 +94,7 @@ body {
 	padding: 12px;
 	border-radius: 4px;
 	cursor: pointer;
+	user-select: none;
 }
 
 .header-item:hover {

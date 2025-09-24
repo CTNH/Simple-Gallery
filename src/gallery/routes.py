@@ -46,7 +46,10 @@ def get_mediaInfo():
     """API endpoint to get all images with their aspect ratios"""
     pathFilter = frequest.args.get('path', default=None)
     tagsFilter = frequest.args.getlist('tag')
-    cacheKey = (pathFilter, frozenset(tagsFilter))
+    typeFilter = frequest.args.get('types', default='').split(',')
+    cacheKey = (pathFilter, frozenset(tagsFilter), frozenset(typeFilter))
+    if typeFilter == ['']:
+        typeFilter = None
 
     if pathFilter is not None:
         pathFilter = f"{pathFilter}%"
@@ -57,7 +60,8 @@ def get_mediaInfo():
     # Get media list from database
     rows = getMediaInfo(
         pathFilter=pathFilter,
-        tagsFilter=tagsFilter
+        tagsFilter=tagsFilter,
+        typeFilter=typeFilter
     )
 
     mediaInfo = OrderedDict()
@@ -217,7 +221,7 @@ def addTag():
             'msg': "At least one media and tag must be selected!"
         }), 400
     forbiddenChars = {
-        '&', '='
+        '&', '=', ','
     }
     rows = []
     for tag in tags:

@@ -1,9 +1,13 @@
 from gallery.models import Media, MediaPath, MediaTag
-from sqlalchemy import func as sqlfunc
+from sqlalchemy import func as sqlfunc, or_
 from gallery.extensions import db
 
 
-def getMediaInfo(pathFilter: str = None, tagsFilter: list = None):
+def getMediaInfo(
+    pathFilter: str = None,
+    tagsFilter: list = None,
+    typeFilter: list = None
+):
     rows = db.session.query(
         Media.hash,
         MediaPath.path,
@@ -20,6 +24,25 @@ def getMediaInfo(pathFilter: str = None, tagsFilter: list = None):
         rows = rows.filter(
             MediaPath.path.like(pathFilter)
         )
+
+    if typeFilter is not None and len(typeFilter) > 0:
+        conditions = []
+
+        if "video" in typeFilter and "image" not in typeFilter:
+            conditions.append(Media.video.is_(True))
+        elif "video" not in typeFilter and "image" in typeFilter:
+            conditions.append(Media.video.is_(False))
+
+        # Filter extensions / mimetypes
+        mediaExts = [t for t in typeFilter if t not in ("video", "image")]
+        if mediaExts:
+            ext_conditions = [
+                MediaPath.path.like(f"%.{ext}") for ext in mediaExts
+            ]
+            conditions.append(or_(*ext_conditions))
+
+        if conditions:
+            rows = rows.filter(or_(*conditions))
 
     if tagsFilter is not None and len(tagsFilter) > 0:
         rows = (

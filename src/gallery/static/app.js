@@ -4,6 +4,7 @@ let allMedia = new Map();
 let allMediaIdx = [];
 let allTags = {};
 const activeTags = new Set();
+const activeTypes = new Set();
 const GALLERY_CONTAINER = document.getElementById('gallery');
 const STATS_ELEM = document.getElementById('stats');
 const SELECT_MODE_CHECKBOX = document.getElementById('select-mode-checkbox');
@@ -90,11 +91,24 @@ async function loadMedia({pushState = true} = {}) {
 	loadMediaByFilter({path: path, tags: tags, pushState: pushState});
 }
 
-async function addActiveFilters({tags = []}) {
-	tags.forEach(tag => {
-		activeTags.add(tag);
+async function addActiveFilters({tags = [], types = []}) {
+	if (tags.length > 0) {
+		tags.forEach(tag => {
+			activeTags.add(tag);
+		});
+	}
+
+	if (types.length > 0) {
+		types.forEach(type => {
+			activeTypes.add(type);
+		});
+	}
+
+	loadMediaByFilter({
+		path: currentPath,
+		tags: Array.from(activeTags),
+		types: Array.from(activeTypes)
 	});
-	loadMediaByFilter({path: currentPath, tags: Array.from(activeTags)});
 }
 
 async function removeActiveFilters({tags = []}) {
@@ -127,8 +141,9 @@ async function updateAllTags() {
 	});
 }
 
-async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}) {
+async function loadMediaByFilter({path = null, tags = [], types = [], pushState = true} = {}) {
 	activeTags.clear();
+	activeTypes.clear();
 	selectedItems = new Set();
 	updateSelectModeMediaCount();
 	SELECT_MODE_CHECKBOX.checked = false;
@@ -152,6 +167,13 @@ async function loadMediaByFilter({path = null, tags = [], pushState = true} = {}
 		for (const tag of tags) {
 			queryparam.push("tag="+tag);
 			activeTags.add(tag);
+		}
+
+		if (types.length > 0) {
+			for (const t of types) {
+				activeTypes.add(t);
+			}
+			queryparam.push("types=" + [...activeTypes].join(','));
 		}
 
 		const joinedParams = queryparam.length > 0 ? ("?" + queryparam.join('&')) : '';
@@ -1025,6 +1047,9 @@ document.getElementById('info-panel-close').addEventListener('click', () => {
 });
 document.getElementById('scroll-to-top-button').addEventListener('click', () => {
 	window.scrollTo({top: 0, behavior: 'smooth'});
+});
+document.getElementById('header-item-video').addEventListener('click', () => {
+	addActiveFilters({types: ['video']});
 });
 document.getElementById('header-item-edit-tags').addEventListener('click', () => {
 	toggleTagEditMode();
