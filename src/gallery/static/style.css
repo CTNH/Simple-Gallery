@@ -336,19 +336,28 @@ body {
 		position: fixed;
 		bottom: 0;
 		width: 100%;
-		height: 0;
+		height: 100%;
+		opacity: 0;
 		background: rgba(0, 0, 0, 0.95);
 		backdrop-filter: blur(10px);
 		border-top: 1px solid rgba(255, 255, 255, 0.1);
 		z-index: 2500;
-		transition: height 0.3s ease;
-		overflow: hidden;
+		transition: all 0.3s ease;
+		pointer-events: none;
 	}
 
 	.info-panel.active {
-		height: 40vh;
-		min-height: 300px;
+		pointer-events: auto;
+		opacity: 1;
+		z-index: 3000;
 		overflow-y: auto;
+		top: 0;
+	}
+
+	#lightbox-button-row,
+	.lightbox-nav {
+		top: unset;
+		bottom: 2%;
 	}
 }
 
