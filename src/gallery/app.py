@@ -1,7 +1,7 @@
 from flask import Flask, render_template
 from os.path import exists, basename, abspath
-from gallery.extensions import db
-from gallery.models import Media, MediaPath
+from models import db, init_db
+from models.models import Media, MediaPath
 from gallery.routes import bp
 from gallery.media import getMediaInfo
 
@@ -15,11 +15,9 @@ def initDB(
 ):
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{dbPath}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    db.init_app(app)
+    init_db(app)
 
     with app.app_context():
-        db.create_all()
-
         # Get list of hash and paths
         mediaPaths = [p[0] for p in db.session.query(MediaPath.path).all()]
         mediaHashes = [p[0] for p in db.session.query(Media.hash).all()]
@@ -96,7 +94,7 @@ def createApp(
 
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{dbPath}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    db.init_app(app)
+    init_db(app)
 
     # Create list of media info and paths from database
     with app.app_context():

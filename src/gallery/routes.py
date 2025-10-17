@@ -2,8 +2,8 @@ from flask import Blueprint, render_template, send_from_directory, send_file
 from flask import abort, request as frequest, make_response, jsonify
 from flask import current_app, Response
 from os.path import isabs, join as pathJoin, basename, abspath
-from gallery.models import Media, MediaTag
-from gallery.extensions import db
+from models.models import Media, MediaTag
+from models import db
 from sqlalchemy import distinct
 from gallery.media import getMediaInfo
 from functools import wraps

@@ -1,6 +1,6 @@
-from gallery.models import Media, MediaPath, MediaTag
+from models.models import Media, MediaPath, MediaTag
 from sqlalchemy import func as sqlfunc, or_
-from gallery.extensions import db
+from models import db
 
 
 def getMediaInfo(
@@ -59,4 +59,4 @@ def getMediaInfo(
             )
         )
 
-    return rows.order_by(Media.datetime).all()
+    return rows.order_by(MediaPath.path).all()

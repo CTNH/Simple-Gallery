@@ -1,4 +1,4 @@
-from gallery.extensions import db
+from . import db
 
 
 class Media(db.Model):
