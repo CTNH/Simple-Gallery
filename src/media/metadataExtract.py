@@ -22,7 +22,10 @@ def MetaExtract(fpath: str) -> dict:
 
     # Images
     if mtype == MediaType.IMAGE:
-        img = Image.open(fpath)
+        try:
+            img = Image.open(fpath)
+        except Exception:
+            return None
         # Basic metadata
         data = {
             'size': getsize(fpath),

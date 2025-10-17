@@ -13,7 +13,8 @@ IMG_EXT = [
     ".webp",
     ".heif", ".heic",
     ".gif",
-    ".bmp"
+    ".bmp",
+    ".avif"
 ]
 VID_EXT = [
     ".mov",

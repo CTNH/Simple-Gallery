@@ -49,12 +49,13 @@ def initialize(config: dict):
     for fpath in Path(MEDIA_PATH).rglob('*'):
         mediaPath = fspath(fpath)
 
-        if abspath(mediaPath).startswith(skipPaths):
+        if fpath.is_dir() or abspath(mediaPath).startswith(skipPaths):
             continue
 
         metadata = MetaExtract(mediaPath)
         # Not supported; skip
         if metadata is None:
+            print(f"Cannot extract metadata from {mediaPath}")
             continue
 
         hash = HASH_METHOD(mediaPath)
@@ -65,16 +66,15 @@ def initialize(config: dict):
         )
         metadata['aspectratio'] = metadata['width'] / metadata['height']
 
-        print("Generating thumbnail")
         for tSize in THUMBNAIL_SIZES:
             tpath = pathJoin(
                 THUMBNAIL_PATH,
                 ''.join(thumbnailPath(hash, tSize))
             )
             if exists(tpath):
-                print("Thumbnail exists, skipping...")
                 continue
 
+            print(f"Generating {tpath}")
             {
                 MediaType.IMAGE: ImgThumbnail,
                 MediaType.VIDEO: VidThumbnail
