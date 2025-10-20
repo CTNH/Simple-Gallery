@@ -21,13 +21,11 @@ function calculateRows(ratios, viewWidth, targetRowHeight) {
 
 			if (rowRatioDiff > rowRatioPrevDiff) {
 				rowRatio -= ratio;
-				rowInfo.count = i - rowInfo.start;
 				rowInfo.end = i;
 
 				// Prevent infinitely looping single wide image
 				if (i == rowInfo.start) {
 					rowRatio = ratio;
-					rowInfo.count++;
 					rowInfo.end ++;
 				}
 
@@ -39,12 +37,14 @@ function calculateRows(ratios, viewWidth, targetRowHeight) {
 
 		rowInfo.height = Math.max(85, viewWidth / rowRatio);
 		rowsStruct.push(rowInfo);
-		idx = rowInfo.start + rowInfo.count;
 		idx = rowInfo.end;
 	}
 
+	let lastRow = rowsStruct[rowsStruct.length - 1];
+	if (!lastRow.end) {
+		lastRow.end = ratios.length;
+	}
 	// Prevent large last row height
-	const lastRow = rowsStruct[rowsStruct.length - 1];
 	lastRow.height = Math.min(lastRow.height, 280);
 
 	return rowsStruct;
