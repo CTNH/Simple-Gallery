@@ -1,5 +1,6 @@
 import { clearCache, getJSONCache } from "./cache.js";
 import { renderGallery } from "./ui/gallery.js";
+import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
 
 let allMedia = new Map();
 let allMediaIdx = [];
@@ -309,20 +310,6 @@ function openTagEditPrompt(tag) {
 		placeholder: "Tag name",
 		value: tag
 	});
-}
-
-function openInputPrompt({header, placeholder, value=''}) {
-	document.getElementById('input-info-header').innerText = header;
-	const input = document.getElementById('input-input');
-	input.placeholder = placeholder;
-	input.value = value;
-	document.getElementById('input-overlay').classList.add('active');
-	input.select();
-}
-
-function closeInputPrompt() {
-	hideInputErr();
-	document.getElementById('input-overlay').classList.remove('active');
 }
 
 function handleTagButton(tag) {
@@ -753,17 +740,6 @@ async function removeTag() {
 		toastMsg: `Successfully removed ${data['tags'].length} tags`,
 		errorPrefix: "Error removing tag:<br>"
 	});
-}
-
-function showInputErr(msg) {
-	let inputError = document.getElementById('input-error');
-	inputError.classList.add('active');
-	inputError.innerHTML = msg;
-}
-function hideInputErr() {
-	let inputError = document.getElementById('input-error');
-	inputError.classList.remove('active');
-	inputError.innerText = '';
 }
 
 function createToast(msg, bgColor) {
