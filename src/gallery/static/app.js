@@ -1,4 +1,5 @@
 import { clearCache, getJSONCache } from "./cache.js";
+import { renderGallery } from "./ui/gallery.js";
 
 let allMedia = new Map();
 let allMediaIdx = [];
@@ -8,7 +9,6 @@ const activeTypes = new Set();
 const GALLERY_CONTAINER = document.getElementById('gallery');
 const STATS_ELEM = document.getElementById('stats');
 const SELECT_MODE_CHECKBOX = document.getElementById('select-mode-checkbox');
-let observer;
 let currMediaIdx = 0;
 let lastWinWidth = window.innerWidth;
 let infoPanelOpen = false;
@@ -213,7 +213,14 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 			GALLERY_CONTAINER.innerHTML = '<div class="error">No images found.</div>';
 		}
 		else {
-			renderGallery();
+			renderGallery(
+				allMediaIdx,
+				allMedia,
+				GALLERY_CONTAINER,
+				openLightbox,
+				handleCheckboxMouseDown,
+				handleCheckboxMouseEnter
+			);
 		}
 	} catch (error) {
 		console.error('Error loading images:', error);
@@ -328,101 +335,6 @@ function handleTagButton(tag) {
 
 function updateStats() {
 	STATS_ELEM.textContent = `${allMedia.size} items • Window: ${window.innerWidth}x${window.innerHeight}px`;
-}
-
-// Intersection Observer setup for lazy loading
-function setupObserver() {
-	if (observer) {
-		observer.disconnect();
-	}
-	observer = new IntersectionObserver(
-		(entries) => {
-			entries.forEach(entry => {
-				if (entry.isIntersecting) {
-					const item = entry.target;
-					if (!item.src) {
-						item.src = item.dataset.src;
-						observer.unobserve(item);
-					}
-				}
-			});
-		},
-		{ rootMargin: '200px' }
-	);
-}
-
-// Logic to decide row height and items in row
-function calculateRows(viewWidth) {
-	// Magic number 200; fix with config
-	const targetRatio = viewWidth / 200;
-	const rows = [];
-	let lastImg = 0;
-
-	while (lastImg < allMedia.size) {
-		let prevRatioDiff = targetRatio;
-		let currTotalRatio = 0;
-		let colInRow = lastImg;
-
-		for (let idx = lastImg; idx < allMedia.size; idx++) {
-			const currMedia = allMedia.get(allMediaIdx[idx]);
-			currTotalRatio += currMedia.aspectRatio;
-
-			// Current ratio diff > previous
-			if (Math.abs(targetRatio - currTotalRatio) > prevRatioDiff) {
-				currTotalRatio -= currMedia.aspectRatio;
-
-				// If the single image is very wide
-				// Needed to prevent infinite loop
-				if (idx == lastImg) {
-					currTotalRatio = currMedia.aspectRatio;
-					colInRow = idx + 1;
-				} else {
-					colInRow = idx;
-				}
-				break;
-			}
-			prevRatioDiff = Math.abs(targetRatio - currTotalRatio);
-
-			// If we've reached the end of images
-			if (idx === allMedia.size - 1) {
-				colInRow = idx + 1;
-				break;
-			}
-		}
-
-		// Same height for all img in row
-		// Magic number
-		const imgh = Math.max(85, viewWidth / currTotalRatio); // Min height of 100px
-
-		// Create row data
-		const rowImages = [];
-		for (let i = lastImg; i < colInRow; i++) {
-			const currMedia = allMedia.get(allMediaIdx[i]);
-			const imgw = (currMedia.aspectRatio / currTotalRatio) * viewWidth;
-			rowImages.push({
-				hash: allMediaIdx[i],
-				...currMedia,
-				width: Math.max(50, imgw - 8), // Account for margin, min width
-				height: imgh,
-				idx: i
-			});
-		}
-
-		rows.push(rowImages);
-		lastImg = colInRow;
-	}
-
-	const lastRow = rows.slice(-1)[0];
-	const maxRowHeight = 280;
-	if (lastRow[0].height > maxRowHeight) {
-		for (let i = 0; i < lastRow.length; i++) {
-			lastRow[i].width = lastRow[i].aspectRatio * maxRowHeight;
-			lastRow[i].height = maxRowHeight;
-		}
-		rows[rows.length - 1] = lastRow
-	}
-
-	return rows;
 }
 
 // Provide either idx or hash, if both present idx overwrites hash
@@ -685,84 +597,17 @@ function updateSelectModeMediaCount() {
 	document.getElementById('select-mode-media-count').innerText = selectedItems.size;
 }
 
-function renderGallery() {
-	const viewWidth = window.innerWidth - 16; // Account for padding
-	const rows = calculateRows(viewWidth, allMedia);
+function handleCheckboxMouseDown(e, checkbox, imgIdx) {
+	checkbox.checked = !checkbox.checked;
+	checkSelect = checkbox.checked;
+	toggleMediaSelection(e, imgIdx);
+}
 
-	// Instead of clearing and recreating everything, reuse existing elements if possible
-	// For simplicity here, we clear and re-render container but defer image src loading
-	GALLERY_CONTAINER.innerHTML = '';
-
-	rows.forEach(row => {
-		const rowDiv = document.createElement('div');
-		rowDiv.className = 'gallery-row';
-
-		row.forEach(img => {
-			const container = document.createElement('div');
-			container.className = 'gallery-media-container';
-			container.style.width = img.width + 'px';
-			container.style.height = img.height + 'px';
-			container.style.position = 'relative';
-
-			const imgElement = document.createElement('img');
-			// Use data-src for lazy loading, no initial src to prevent eager loading
-			imgElement.dataset.src = '/media/' + img.hash + "/thumbnail";
-			imgElement.className = 'gallery-media';
-			imgElement.style.width = '100%';
-			imgElement.style.height = '100%';
-			imgElement.alt = img.name;
-			imgElement.title = img.name;
-			imgElement.loading = 'lazy'; // Works as fallback
-
-			imgElement.addEventListener('click', () => openLightbox({idx: img.idx}));
-			container.appendChild(imgElement);
-
-			const checkbox = document.createElement('div');
-			checkbox.checked = false;
-			checkbox.className = 'selection-checkbox';
-			if (selectedItems.has(img.idx)) {
-				checkbox.classList.add('selected');
-			}
-			checkbox.addEventListener('mousedown', function(e) {
-				this.checked = !this.checked;
-				checkSelect = this.checked;
-				toggleMediaSelection(e, img.idx);
-			});
-			checkbox.addEventListener('mouseenter', function(e) {
-				if (mouseDown && (this.checked !== checkSelect)) {
-					this.checked = !this.checked;
-					toggleMediaSelection(e, img.idx);
-				}
-			});
-			container.appendChild(checkbox);
-
-			if (img.video === true && img.duration) {
-				const durationDiv = document.createElement('div');
-				durationDiv.className = 'video-duration';
-
-				const playIcon = document.createElement('span');
-				playIcon.className = 'play-icon';
-				// Use a simple SVG play icon
-				playIcon.innerHTML = `
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 18" fill="white" width="12" height="12">
-						<path d="M8 5v14l11-7z"/>
-					</svg>
-				`;
-				durationDiv.appendChild(playIcon);
-				durationDiv.appendChild(document.createTextNode(img.duration));
-
-				container.appendChild(durationDiv);
-			}
-
-			rowDiv.appendChild(container);
-		});
-		GALLERY_CONTAINER.appendChild(rowDiv);
-	});
-
-	// After new elements added, observe their images for lazy loading
-	setupObserver();
-	// Start observing all images
-	GALLERY_CONTAINER.querySelectorAll('img.gallery-media').forEach(img => observer.observe(img));
+function handleCheckboxMouseEnter(e, checkbox, imgIdx) {
+	if (mouseDown && (checkbox.checked !== checkSelect)) {
+		checkbox.checked = !checkbox.checked;
+		toggleMediaSelection(e, imgIdx);
+	}
 }
 
 // Debounced resize handler
@@ -772,7 +617,14 @@ function handleResize() {
 	resizeTimeout = setTimeout(() => {
 		updateStats();
 		if (allMedia.size > 0) {
-			renderGallery();
+			renderGallery(
+				allMediaIdx,
+				allMedia,
+				GALLERY_CONTAINER,
+				openLightbox,
+				handleCheckboxMouseDown,
+				handleCheckboxMouseEnter
+			);
 		}
 
 		// Close info panel if switching between mobile/desktop
