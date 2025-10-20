@@ -1,5 +1,6 @@
 import { clearCache, getJSONCache } from "./cache.js";
 import { renderGallery } from "./ui/gallery.js";
+import { hideLightbox, rotateLightboxImg, showLightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
 
 let allMedia = new Map();
@@ -27,8 +28,6 @@ const TOAST_CONTAINER = document.getElementById('toast-container');
 const FIRST_TOAST = document.getElementById('first-toast');
 let lastToast = FIRST_TOAST;
 
-let prevPathName = '/';
-
 const Modes = {
 	none: 0,
 	lightbox: 1,
@@ -40,8 +39,6 @@ let activeMode = Modes.none;
 let lastActiveMode = Modes.none;
 
 let handleInputExtra = null;
-
-const lightboxVid = document.getElementById('lightbox-vid');
 
 let cssRules = {};
 const sheet = document.styleSheets[0].cssRules;
@@ -336,87 +333,31 @@ async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 		return;
 	}
 
-	if (updateHistory) {
-		if (!(window.location.pathname.startsWith('/lightbox/'))) {
-			prevPathName = window.location.pathname + window.location.search;
-		}
-		window.history.pushState({}, '', '/lightbox/' + hash);
-	}
-
-	const lightboxImg = document.getElementById('lightbox-img');
-	const lightboxVid = document.getElementById('lightbox-vid');
-
-	document.getElementById('lightbox').classList.add('active');
-	showLightboxButtons();
-
-	if (allMedia.get(hash).video === false) {
-		rotateLightboxImg();
-		lightboxImg.src = `/media/${hash}/original`;
-		lightboxImg.alt = allMedia.get(hash).name;
-
-		lightboxImg.classList.add('active');
-		lightboxVid.classList.remove('active');
-	}
-	else {
-		lightboxVid.src = `/media/${hash}/original`;
-
-		lightboxVid.classList.add('active');
-		lightboxImg.classList.remove('active');
-	}
+	const media = allMedia.get(hash);
+	showLightbox({
+		hash: hash,
+		mediaName: media.name,
+		vid: media.video,
+		updateHistory: updateHistory,
+		mediaRotation: media.rotation,
+		infoPanelWidthOffset: (
+			infoPanelOpen
+				? document.getElementById('info-panel').clientWidth : 0
+		)
+	});
 
 	// Update info panel if it's open
 	if (infoPanelOpen) {
 		await updateInfoPanel();
 		document.getElementById('info-panel').classList.add('active');
 	}
-
-	// Prevent Scrolling
-	document.body.style.overflow = 'hidden';
-}
-
-function rotateLightboxImg() {
-	const lightboxImg = document.getElementById('lightbox-img');
-	const currMediaHash = allMediaIdx[currMediaIdx];
-
-	lightboxImg.style.maxWidth = '90%';
-	lightboxImg.style.maxHeight = '96%';
-	const mediaRotation = allMedia.get(currMediaHash).rotation;
-	if (mediaRotation !== null) {
-		lightboxImg.style.transform = 'rotate(' + mediaRotation + 'deg)';
-		const infoPanelWidth = (infoPanelOpen) ? document.getElementById('info-panel').clientWidth : 0;
-
-		if (mediaRotation === 90 || mediaRotation === 270) {
-			const lightbox = document.getElementById('lightbox');
-			// Swap width and height
-			lightboxImg.style.maxWidth = (lightbox.clientHeight*0.96) + 'px';
-			lightboxImg.style.maxHeight = (lightbox.clientWidth*0.9 - infoPanelWidth) + 'px';
-		}
-	}
-	else {
-		lightboxImg.style.transform = '';
-	}
 }
 
 function closeLightbox({pushState = true} = {}) {
-	const lightboxVid = document.getElementById('lightbox-vid');
-	lightboxVid.removeAttribute('src');
-	lightboxVid.load();
-
-	hideLightboxButtons();
+	hideLightbox({ pushState: pushState });
 
 	activeMode = Modes.none;
-
-	document.getElementById('lightbox').classList.remove('active');
-	document.getElementById('lightbox-button-row').classList.remove('active');
 	document.getElementById('info-panel').classList.remove('active');
-
-	if (pushState) {
-		window.history.pushState({}, '', prevPathName);
-		prevPathName = '/';
-	}
-
-	// Restore Scrolling
-	document.body.style.overflow = '';
 }
 
 async function nextMedia() {
@@ -450,7 +391,10 @@ async function openInfoPanel() {
 	infoPanelOpen = true;
 	infoPanel.classList.add('active');
 	lightboxContent.classList.add('info-open');
-	rotateLightboxImg();
+	rotateLightboxImg(
+		allMedia.get(allMediaIdx[currMediaIdx]).rotation,
+		document.getElementById('info-panel').clientWidth
+	);
 	await updateInfoPanel();
 }
 
@@ -561,7 +505,10 @@ async function rotate(deg) {
 	let rotation = allMedia.get(currMediaHash).rotation;
 	rotation = (rotation == null) ? 0 : rotation;
 	allMedia.get(currMediaHash).rotation = (rotation + deg + 360) % 360;
-	rotateLightboxImg();
+	rotateLightboxImg(
+		allMedia.get(currMediaHash).rotation,
+		(infoPanelOpen) ? document.getElementById('info-panel').clientWidth : 0
+	);
 
 	// Update info panel if it's open
 	if (infoPanelOpen) {
@@ -819,19 +766,6 @@ SELECT_MODE_CHECKBOX.addEventListener('change', function() {
 	toggleSelectionMode();
 });
 
-function showLightboxButtons() {
-	document.getElementById('lightbox-button-row').classList.add('active');
-	document.querySelectorAll('.lightbox-nav').forEach((elem) => {
-		elem.classList.add('active');
-	});
-}
-function hideLightboxButtons() {
-	document.getElementById('lightbox-button-row').classList.remove('active');
-	document.querySelectorAll('.lightbox-nav').forEach((elem) => {
-		elem.classList.remove('active');
-	});
-}
-
 document.getElementById('select-mode-deselect-all').addEventListener('click', () => {
 	selectModeDeselectAll();
 });
@@ -898,18 +832,6 @@ document.getElementById('input-overlay').addEventListener('click', (e) => {
 		handleInputCancel();
 	}
 });
-
-['play', 'pause', 'ended'].forEach(event =>
-	lightboxVid.addEventListener(event, (e) => {
-		const vid = e.target;
-		if (vid.paused || vid.ended) {
-			showLightboxButtons();
-		}
-		else {
-			hideLightboxButtons();
-		}
-	})
-);
 
 document.getElementById('input-input').addEventListener('keydown', e => {
 	if (e.key === 'Enter') {

@@ -9,6 +9,11 @@ export class ElemWrapper {
 		return this.element;
 	}
 
+	setElem(elem) {
+		this.element = elem;
+		return this;
+	}
+
 	setAttr(attr, val) {
 		this.element.setAttribute(attr, val);
 		return this;
@@ -19,6 +24,10 @@ export class ElemWrapper {
 			this.element.setAttribute(attr, attrs[attr]);
 		}
 		return this;
+	}
+
+	setStyle(style, val) {
+		this.element.style[style] = val;
 	}
 
 	setStyles(styles) {
@@ -35,6 +44,11 @@ export class ElemWrapper {
 
 	setHTML(data) {
 		this.element.innerHTML = data;
+		return this;
+	}
+
+	setText(data) {
+		this.element.innerText = data;
 		return this;
 	}
 
@@ -56,9 +70,22 @@ export class ElemWrapper {
 		this.element.appendChild(child);
 		return this;
 	}
+	appendChildWrapper(child) {
+		this.element.appendChild(child.getElem());
+		return this;
+	}
 
 	addEventListener(event, handler) {
 		this.element.addEventListener(event, handler);
+		return this;
+	}
+
+	addClass(name) {
+		this.element.classList.add(name);
+		return this;
+	}
+	removeClass(name) {
+		this.element.classList.remove(name);
 		return this;
 	}
 }
@@ -82,5 +109,12 @@ export function createDiv({ className = "" } = {}) {
 // Use dataset.src for lazy loading
 export function createLazyImg({ src = "" } = {}) {
 	return (new LazyImgElem()).setData('src', src);
+}
+
+
+export function getElemWrapperFromID(id) {
+	return new ElemWrapper('div').setElem(
+		document.getElementById(id)
+	);
 }
 
