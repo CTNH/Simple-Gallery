@@ -28,3 +28,15 @@ export function createPathButtons(path, handlePathButton) {
 	return container;
 }
 
+export function addTagButtons(tags, handleButton, parent) {
+	if (tags.length == 0) {
+		parent.appendChild(document.createTextNode("None"));
+	}
+	tags.forEach(tag => {
+		(new ElemWrapper('a'))
+			.setText(tag)
+			.addEventListener('click', () => { handleButton(tag) })
+			.appendto(parent);
+	});
+}
+

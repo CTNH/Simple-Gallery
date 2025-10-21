@@ -12,6 +12,7 @@ import {
 } from "./states/media.js";
 import { createPathButtons } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
+import { updateInfoPanel } from "./ui/infopanel.js";
 import { hideLightbox, rotateLightboxImg, showLightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
 import { createToast } from "./ui/toast.js";
@@ -317,7 +318,16 @@ async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 
 	// Update info panel if it's open
 	if (infoPanelOpen) {
-		await updateInfoPanel();
+		await updateInfoPanel({
+			media: {
+				hash: getCurrentMediaHash(),
+				idx: getCurrentMediaIndex(),
+				...getCurrentMedia()
+			},
+			mediaCount: getMediaListSize(),
+			handlePathButtons: addPathFilter,
+			handleTagButtons: handleTagButton
+		});
 		document.getElementById('info-panel').classList.add('active');
 	}
 }
@@ -364,7 +374,16 @@ async function openInfoPanel() {
 		getCurrentMedia().rotation,
 		document.getElementById('info-panel').clientWidth
 	);
-	await updateInfoPanel();
+	await updateInfoPanel({
+		media: {
+			hash: getCurrentMediaHash(),
+			idx: getCurrentMediaIndex(),
+			...getCurrentMedia()
+		},
+		mediaCount: getMediaListSize(),
+		handlePathButtons: addPathFilter,
+		handleTagButtons: handleTagButton
+	});
 }
 
 function closeInfoPanel() {
@@ -376,83 +395,6 @@ function closeInfoPanel() {
 	infoPanel.classList.remove('active');
 	lightboxContent.classList.remove('info-open');
 	infoButton.classList.remove('active');
-}
-
-async function updateInfoPanel() {
-	if (!infoPanelOpen || getCurrentMediaIndex() >= getMediaListSize()) return;
-
-	const media = getCurrentMedia();
-	const infoContent = document.getElementById('info-content');
-
-	// Format file size
-	const formatFileSize = (bytes) => {
-		if (!bytes) return 'Unknown';
-		const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-		const i = Math.floor(Math.log(bytes) / Math.log(1024));
-		return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-	};
-
-	// Format date
-	const formatDate = (timestamp) => {
-		if (!timestamp) return 'Unknown';
-		const date = new Date(timestamp);
-		return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-	};
-
-	const infoData = new Map([
-		["File Information", new Map([
-			["Name", media.name || 'Unknown'],
-			["Type", media.video ? 'Video' : 'Image'],
-			["Size", formatFileSize(media.size)],
-			["Dimensions", (media.width || '?') + ' x ' + (media.height || '?')],
-			["Aspect Ratio", media.aspectRatio ? media.aspectRatio.toFixed(2) : 'Unknown'],
-			["Duration", (media.video && media.duration) ? media.duration : '-'],
-			["Rotation", (media.rotation || 0) + '&deg;'],
-			["Path", createPathButtons(media.path, addPathFilter) || 'Unknown']
-		])],
-		["Technical Details", new Map([
-			["Hash", getCurrentMediaHash()],
-			["Created", formatDate(media.dateCreated)],
-			["Modified", formatDate(media.dateModified)]
-		])],
-		["Gallery Info", new Map([
-			["Index", (getCurrentMediaIndex() + 1) + ' of '  + getMediaListSize()],
-			["Display Size", Math.round(media.width || 0) + ' x ' + Math.round(media.height || 0)],
-			["Tags", await createInfoTagButtons(getCurrentMediaHash())],
-		])]
-	]);
-	infoContent.innerHTML = "";
-	for (const [infoSection, infoItems] of infoData) {
-		const infoSectionElem = document.createElement('div');
-		infoSectionElem.className = 'info-section';
-
-		const infoSectionHeaderElem = document.createElement('h3');
-		infoSectionHeaderElem.innerText = infoSection;
-		infoSectionElem.appendChild(infoSectionHeaderElem);
-
-		for (const [infoLabel, infoValue] of infoItems) {
-			const infoItemElem = document.createElement('div');
-			infoItemElem.className = 'info-item';
-
-			const infoLabelElem = document.createElement('span');
-			infoLabelElem.className = "info-label";
-			infoLabelElem.innerHTML = infoLabel;
-			infoItemElem.appendChild(infoLabelElem);
-
-			const infoValueElem = document.createElement('span');
-			infoValueElem.className = "info-value";
-			if (infoValue instanceof Element) {
-				infoValueElem.appendChild(infoValue);
-			}
-			else {
-				infoValueElem.innerHTML = infoValue;
-			}
-			infoItemElem.appendChild(infoValueElem);
-
-			infoSectionElem.appendChild(infoItemElem);
-		}
-		infoContent.appendChild(infoSectionElem);
-	}
 }
 
 async function rotate(clockwise) {
@@ -479,7 +421,16 @@ async function rotate(clockwise) {
 
 	// Update info panel if it's open
 	if (infoPanelOpen) {
-		await updateInfoPanel();
+		await updateInfoPanel({
+			media: {
+				hash: getCurrentMediaHash(),
+				idx: getCurrentMediaIndex(),
+				...getCurrentMedia()
+			},
+			mediaCount: getMediaListSize(),
+			handlePathButtons: addPathFilter,
+			handleTagButtons: handleTagButton
+		});
 	}
 }
 
