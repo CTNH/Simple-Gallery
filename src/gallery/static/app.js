@@ -1,4 +1,15 @@
 import { clearCache, getJSONCache } from "./cache.js";
+import {
+	getAllMediaIndexed,
+	getCurrentMedia,
+	getCurrentMediaHash,
+	getCurrentMediaIndex,
+	getHashesAtIndices,
+	getMedia,
+	getMediaListSize,
+	setCurrentMedia,
+	setNewMedia
+} from "./states/media.js";
 import { createPathButtons } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
 import { hideLightbox, rotateLightboxImg, showLightbox } from "./ui/lightbox.js";
@@ -6,15 +17,12 @@ import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js"
 import { createToast } from "./ui/toast.js";
 import { api_rotate } from "./utils/api.js";
 
-let allMedia = new Map();
-let allMediaIdx = [];
 let allTags = {};
 const activeTags = new Set();
 const activeTypes = new Set();
 const GALLERY_CONTAINER = document.getElementById('gallery');
 const STATS_ELEM = document.getElementById('stats');
 const SELECT_MODE_CHECKBOX = document.getElementById('select-mode-checkbox');
-let currMediaIdx = 0;
 let lastWinWidth = window.innerWidth;
 let infoPanelOpen = false;
 
@@ -49,14 +57,13 @@ for (let i = 0; i < sheet.length; i++) {
 async function updateAllMedia(queryParams='') {
 	const response = await fetch('/api/media' + queryParams);
 	const jsonResp = await response.json();
-	allMedia = new Map(jsonResp['data']);
-	allMediaIdx = Array.from(allMedia.keys());
+	setNewMedia(jsonResp['data']);
 }
 
 async function loadMedia({pushState = true} = {}) {
 	if (window.location.pathname.startsWith('/lightbox/')) {
 		const mediaHash = window.location.pathname.slice(10);
-		if (allMedia.get(mediaHash, null) == null) {
+		if (getMedia(mediaHash) == null) {
 			await updateAllMedia();
 		}
 		await openLightbox({hash: mediaHash, updateHistory: pushState});
@@ -153,7 +160,7 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 	closeLightbox({pushState: pushState});
 
 	currentPath = path;
-	currMediaIdx = 0;
+	setCurrentMedia(0);
 
 	try {
 		let queryparam = [];
@@ -206,13 +213,12 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 
 		updateStats();
 
-		if (allMedia.size === 0) {
+		if (getMediaListSize() === 0) {
 			GALLERY_CONTAINER.innerHTML = '<div class="error">No images found.</div>';
 		}
 		else {
 			renderGallery(
-				allMediaIdx,
-				allMedia,
+				getAllMediaIndexed(),
 				GALLERY_CONTAINER,
 				openLightbox,
 				handleCheckboxMouseDown,
@@ -281,22 +287,22 @@ function handleTagButton(tag) {
 }
 
 function updateStats() {
-	STATS_ELEM.textContent = `${allMedia.size} items • Window: ${window.innerWidth}x${window.innerHeight}px`;
+	STATS_ELEM.textContent = `${getMediaListSize()} items • Window: ${window.innerWidth}x${window.innerHeight}px`;
 }
 
 // Provide either idx or hash, if both present idx overwrites hash
 async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 	activeMode = Modes.lightbox;
 	if (idx !== null) {
-		currMediaIdx = idx;
-		hash = allMediaIdx[idx];
+		setCurrentMedia(idx);
+		hash = getCurrentMediaHash();
 	}
 	else if (hash == null) {
 		console.error("No index or hash provided!");
 		return;
 	}
 
-	const media = allMedia.get(hash);
+	const media = getMedia(hash);
 	showLightbox({
 		hash: hash,
 		mediaName: media.name,
@@ -325,14 +331,14 @@ function closeLightbox({pushState = true} = {}) {
 
 async function nextMedia() {
 	document.getElementById('lightbox-vid').removeAttribute('src');
-	currMediaIdx = (currMediaIdx + 1) % allMedia.size;
-	await openLightbox({idx: currMediaIdx});
+	setCurrentMedia(1, true);
+	await openLightbox({idx: getCurrentMediaIndex()});
 }
 
 async function prevMedia() {
 	document.getElementById('lightbox-vid').removeAttribute('src');
-	currMediaIdx = (currMediaIdx - 1 + allMedia.size) % allMedia.size;
-	await openLightbox({idx: currMediaIdx});
+	setCurrentMedia(-1, true);
+	await openLightbox({idx: getCurrentMediaIndex()});
 }
 
 async function toggleInfoPanel() {
@@ -355,7 +361,7 @@ async function openInfoPanel() {
 	infoPanel.classList.add('active');
 	lightboxContent.classList.add('info-open');
 	rotateLightboxImg(
-		allMedia.get(allMediaIdx[currMediaIdx]).rotation,
+		getCurrentMedia().rotation,
 		document.getElementById('info-panel').clientWidth
 	);
 	await updateInfoPanel();
@@ -373,9 +379,9 @@ function closeInfoPanel() {
 }
 
 async function updateInfoPanel() {
-	if (!infoPanelOpen || currMediaIdx >= allMedia.size) return;
+	if (!infoPanelOpen || getCurrentMediaIndex() >= getMediaListSize()) return;
 
-	const media = allMedia.get(allMediaIdx[currMediaIdx]);
+	const media = getCurrentMedia();
 	const infoContent = document.getElementById('info-content');
 
 	// Format file size
@@ -405,14 +411,14 @@ async function updateInfoPanel() {
 			["Path", createPathButtons(media.path, addPathFilter) || 'Unknown']
 		])],
 		["Technical Details", new Map([
-			["Hash", allMediaIdx[currMediaIdx]],
+			["Hash", getCurrentMediaHash()],
 			["Created", formatDate(media.dateCreated)],
 			["Modified", formatDate(media.dateModified)]
 		])],
 		["Gallery Info", new Map([
-			["Index", (currMediaIdx + 1) + ' of '  + allMedia.size],
+			["Index", (getCurrentMediaIndex() + 1) + ' of '  + getMediaListSize()],
 			["Display Size", Math.round(media.width || 0) + ' x ' + Math.round(media.height || 0)],
-			["Tags", await createInfoTagButtons(allMediaIdx[currMediaIdx])],
+			["Tags", await createInfoTagButtons(getCurrentMediaHash())],
 		])]
 	]);
 	infoContent.innerHTML = "";
@@ -450,10 +456,8 @@ async function updateInfoPanel() {
 }
 
 async function rotate(clockwise) {
-	const currMediaHash = allMediaIdx[currMediaIdx];
-
 	const err = await api_rotate({
-		hash: currMediaHash,
+		hash: getCurrentMediaHash(),
 		clockwise: clockwise
 	});
 	if (err) {
@@ -462,12 +466,12 @@ async function rotate(clockwise) {
 	}
 
 	// Apply now
-	let rotation = allMedia.get(currMediaHash).rotation;
+	let rotation = getCurrentMedia().rotation;
 	if (rotation == null) {
 		rotation = 0;
 	}
 	rotation = (rotation + ((clockwise) ? 90 : -90) + 360) % 360;
-	allMedia.get(currMediaHash).rotation = rotation;
+	getCurrentMedia().rotation = rotation;
 	rotateLightboxImg(
 		rotation,
 		(infoPanelOpen) ? document.getElementById('info-panel').clientWidth : 0
@@ -513,10 +517,9 @@ function handleResize() {
 	clearTimeout(resizeTimeout);
 	resizeTimeout = setTimeout(() => {
 		updateStats();
-		if (allMedia.size > 0) {
+		if (getMediaListSize() > 0) {
 			renderGallery(
-				allMediaIdx,
-				allMedia,
+				getAllMediaIndexed(),
 				GALLERY_CONTAINER,
 				openLightbox,
 				handleCheckboxMouseDown,
@@ -598,7 +601,10 @@ async function tagPromptRequest({data, method, toastMsg, errorPrefix}) {
 
 		closeTagPrompt();
 
-		createToast(toastMsg, '#4ad466');
+		createToast({
+			msg: toastMsg,
+			bgColor: '#4ad466'
+		});
 	} catch (error) {
 		showInputErr(errorPrefix + error.message);
 	}
@@ -607,14 +613,11 @@ async function tagPromptRequest({data, method, toastMsg, errorPrefix}) {
 async function addTag() {
 	let data = {
 		'tag': [],
-		'hashes': []
+		'hashes': getHashesAtIndices(Array.from(selectedItems))
 	};
 
 	for (const t of document.getElementById('input-input').value.split(' ')) {
 		data['tag'].push(t);
-	}
-	for (const idx of selectedItems) {
-		data['hashes'].push(allMediaIdx[idx]);
 	}
 
 	tagPromptRequest({
@@ -665,7 +668,7 @@ function toggleTagEditMode() {
 }
 
 function selectModeSelectAll() {
-	for (let i=0; i<allMedia.size; i++) {
+	for (let i=0; i<getMediaListSize(); i++) {
 		selectedItems.add(i);
 	}
 	document.querySelectorAll('.selection-checkbox').forEach(e => {
@@ -675,7 +678,7 @@ function selectModeSelectAll() {
 }
 
 function selectModeDeselectAll() {
-	for (let i=0; i<allMedia.size; i++) {
+	for (let i=0; i<getMediaListSize(); i++) {
 		selectedItems.delete(i);
 	}
 	document.querySelectorAll('.selection-checkbox').forEach(e => {
@@ -805,7 +808,7 @@ document.addEventListener('keydown', (e) => {
 					break;
 				case 'a':
 					// Deselect all if all is selected
-					if (selectedItems.size === allMedia.size) {
+					if (selectedItems.size === getMediaListSize()) {
 						selectModeDeselectAll();
 					}
 					else {
@@ -852,7 +855,7 @@ document.addEventListener('keydown', (e) => {
 			switch (e.key) {
 				case 'ArrowRight':
 				case 'ArrowLeft':
-					openLightbox({idx: currMediaIdx});
+					openLightbox({idx: getCurrentMediaIndex()});
 					break;
 				case 's':
 					SELECT_MODE_CHECKBOX.checked = true;

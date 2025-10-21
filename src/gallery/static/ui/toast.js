@@ -1,4 +1,4 @@
-import { createDiv } from "./elements";
+import { createDiv } from "./elements.js";
 
 const TOAST_CONTAINER = document.getElementById('toast-container');
 const FIRST_TOAST = document.getElementById('first-toast');
@@ -7,7 +7,7 @@ let lastToast = FIRST_TOAST;
 
 
 export function createToast({ msg, bgColor, fadeout = DEFAULT_FADEOUT }) {
-	const toast = createDiv('toast-banner')
+	const toast = createDiv({ className: 'toast-banner' })
 		.setText(msg)
 		.setStyles({
 			'backgroundColor': bgColor

@@ -50,9 +50,8 @@ function calculateRows(ratios, viewWidth, targetRowHeight) {
 	return rowsStruct;
 }
 
-
 export function renderGallery(
-	mediaIdx, media, parentElem,
+	indexedMedia, parentElem,
 	handleImgClick, handleCheckboxMouseDown, handleCheckboxMouseEnter
 ) {
 	// Lazy load images
@@ -61,8 +60,8 @@ export function renderGallery(
 	parentElem.innerHTML = '';
 
 	calculateRows(
-		mediaIdx.map(key => {
-			return media.get(key).aspectRatio;
+		indexedMedia.map(media => {
+			return media.aspectRatio;
 		}),
 		window.innerWidth - 16,
 		200
@@ -70,8 +69,7 @@ export function renderGallery(
 		const rowElem = createDiv({ className: 'gallery-row' });
 
 		for (let i = row.start; i < row.end; i++) {
-			const imgHash = mediaIdx[i];
-			const img = media.get(imgHash);
+			const img = indexedMedia[i]
 
 			const imgContainer = createDiv({ className: 'gallery-media-container' })
 				.setStyles({
@@ -80,7 +78,7 @@ export function renderGallery(
 					position: 'relative'
 				});
 
-			createLazyImg({ src: `/media/${imgHash}/thumbnail` })
+			createLazyImg({ src: `/media/${img.hash}/thumbnail` })
 				.className('gallery-media')
 				.setStyles({
 					width: '100%',
