@@ -1,4 +1,5 @@
 import { clearCache, getJSONCache } from "./cache.js";
+import { createPathButtons } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
 import { hideLightbox, rotateLightboxImg, showLightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
@@ -185,7 +186,7 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 
 		const pathFilter = document.getElementById('filter-path');
 		pathFilter.innerHTML = '';
-		pathFilter.appendChild(createPathButtons(path));
+		pathFilter.appendChild(createPathButtons(path, addPathFilter));
 
 		updateAllTags();
 
@@ -228,42 +229,6 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 
 function addPathFilter(path) {
 	loadMediaByFilter({path: path, tags: Array.from(activeTags)})
-}
-
-function createPathButtons(path) {
-	if (path == null) {
-		path = '/';
-	}
-
-	const container = document.createElement('div');
-	const basePath = document.createElement('a');
-	basePath.innerText = 'ALL';
-	basePath.title = 'Show media with any path';
-	basePath.addEventListener('click', () => {
-		addPathFilter(null);
-	});
-	container.appendChild(basePath);
-	container.appendChild(document.createTextNode('/'));
-
-	let cumPath = '';
-	if (path !== '/') {
-		path.split('/').slice(0, -1).forEach(segment => {
-			cumPath += segment + "/";
-			const currCumPath = cumPath;
-
-			const pathButton = document.createElement('a');
-			pathButton.title = "Show only media in '" + currCumPath + "'";
-			pathButton.innerText = segment;
-			pathButton.addEventListener('click', () => {
-				addPathFilter(currCumPath);
-			});
-
-			container.appendChild(pathButton);
-			container.appendChild(document.createTextNode('/'));
-		});
-	}
-
-	return container;
 }
 
 async function createInfoTagButtons(hash) {
@@ -439,7 +404,7 @@ async function updateInfoPanel() {
 			["Aspect Ratio", media.aspectRatio ? media.aspectRatio.toFixed(2) : 'Unknown'],
 			["Duration", (media.video && media.duration) ? media.duration : '-'],
 			["Rotation", (media.rotation || 0) + '&deg;'],
-			["Path", createPathButtons(media.path) || 'Unknown']
+			["Path", createPathButtons(media.path, addPathFilter) || 'Unknown']
 		])],
 		["Technical Details", new Map([
 			["Hash", allMediaIdx[currMediaIdx]],
@@ -486,13 +451,10 @@ async function updateInfoPanel() {
 	}
 }
 
-async function rotate(deg) {
-	if (deg !== 90 && deg !== -90)
-		return;
-
+async function rotate(clockwise) {
 	const currMediaHash = allMediaIdx[currMediaIdx];
 
-	const direction = (deg === 90) ? '/right' : '/left';
+	const direction = (clockwise) ? '/right' : '/left';
 	const resp = await fetch(
 		'/api/rotate/' + currMediaHash + direction,
 		{method: 'POST'}
@@ -504,7 +466,8 @@ async function rotate(deg) {
 	// Apply now
 	let rotation = allMedia.get(currMediaHash).rotation;
 	rotation = (rotation == null) ? 0 : rotation;
-	allMedia.get(currMediaHash).rotation = (rotation + deg + 360) % 360;
+	rotation += (clockwise) ? 90 : -90;
+	allMedia.get(currMediaHash).rotation = (rotation + 360) % 360;
 	rotateLightboxImg(
 		allMedia.get(currMediaHash).rotation,
 		(infoPanelOpen) ? document.getElementById('info-panel').clientWidth : 0
@@ -796,10 +759,10 @@ document.getElementById('lightbox-next').addEventListener('click', () => {
 	nextMedia();
 });
 document.getElementById('lightbox-button-counter-clockwise').addEventListener('click', () => {
-	rotate(-90);
+	rotate(false);
 });
 document.getElementById('lightbox-button-clockwise').addEventListener('click', () => {
-	rotate(90);
+	rotate(true);
 });
 document.getElementById('lightbox-button-info-panel').addEventListener('click', () => {
 	toggleInfoPanel();
