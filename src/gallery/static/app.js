@@ -218,13 +218,13 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 			GALLERY_CONTAINER.innerHTML = '<div class="error">No images found.</div>';
 		}
 		else {
-			renderGallery(
-				getAllMediaIndexed(),
-				GALLERY_CONTAINER,
-				openLightbox,
-				handleCheckboxMouseDown,
-				handleCheckboxMouseEnter
-			);
+			renderGallery({
+				indexedMedia: getAllMediaIndexed(),
+				parentElem: GALLERY_CONTAINER,
+				handleImgClick: openLightbox,
+				handleCheckboxMouseDown: handleCheckboxMouseDown,
+				handleCheckboxMouseEnter: handleCheckboxMouseEnter
+			});
 		}
 	} catch (error) {
 		console.error('Error loading images:', error);
@@ -234,35 +234,6 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 
 function addPathFilter(path) {
 	loadMediaByFilter({path: path, tags: Array.from(activeTags)})
-}
-
-async function createInfoTagButtons(hash) {
-	if (!(hash in allTags)) {
-		let resp = await getJSONCache('/api/tags?hash=' + hash, TAGS_CACHE);
-
-		if (!resp['success']) {
-			console.error("Failed to get tags data.")
-			return '';
-		}
-
-		allTags[hash] = resp['data'];
-	}
-
-	if (allTags[hash].length == 0) {
-		return 'None';
-	}
-
-	const container = document.createElement('div');
-	for (const tag of allTags[hash]) {
-		const tagButton = document.createElement('a');
-		tagButton.innerText = tag;
-		tagButton.addEventListener('click', () => {
-			handleTagButton(tag);
-		});
-
-		container.appendChild(tagButton);
-	}
-	return container;
 }
 
 function openTagEditPrompt(tag) {
@@ -469,13 +440,13 @@ function handleResize() {
 	resizeTimeout = setTimeout(() => {
 		updateStats();
 		if (getMediaListSize() > 0) {
-			renderGallery(
-				getAllMediaIndexed(),
-				GALLERY_CONTAINER,
-				openLightbox,
-				handleCheckboxMouseDown,
-				handleCheckboxMouseEnter
-			);
+			renderGallery({
+				indexedMedia: getAllMediaIndexed(),
+				parentElem: GALLERY_CONTAINER,
+				handleImgClick: openLightbox,
+				handleCheckboxMouseDown: handleCheckboxMouseDown,
+				handleCheckboxMouseEnter: handleCheckboxMouseEnter
+			});
 		}
 
 		// Close info panel if switching between mobile/desktop

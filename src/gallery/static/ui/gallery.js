@@ -50,10 +50,10 @@ function calculateRows(ratios, viewWidth, targetRowHeight) {
 	return rowsStruct;
 }
 
-export function renderGallery(
+export function renderGallery({
 	indexedMedia, parentElem,
 	handleImgClick, handleCheckboxMouseDown, handleCheckboxMouseEnter
-) {
+}) {
 	// Lazy load images
 	setupObserver();
 
