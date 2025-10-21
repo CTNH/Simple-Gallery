@@ -4,6 +4,7 @@ import { renderGallery } from "./ui/gallery.js";
 import { hideLightbox, rotateLightboxImg, showLightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
 import { createToast } from "./ui/toast.js";
+import { api_rotate } from "./utils/api.js";
 
 let allMedia = new Map();
 let allMediaIdx = [];
@@ -451,22 +452,24 @@ async function updateInfoPanel() {
 async function rotate(clockwise) {
 	const currMediaHash = allMediaIdx[currMediaIdx];
 
-	const direction = (clockwise) ? '/right' : '/left';
-	const resp = await fetch(
-		'/api/rotate/' + currMediaHash + direction,
-		{method: 'POST'}
-	);
-	const jsonResp = await resp.json();
-	if (!jsonResp.success)
+	const err = await api_rotate({
+		hash: currMediaHash,
+		clockwise: clockwise
+	});
+	if (err) {
+		console.log(err);
 		return;
+	}
 
 	// Apply now
 	let rotation = allMedia.get(currMediaHash).rotation;
-	rotation = (rotation == null) ? 0 : rotation;
-	rotation += (clockwise) ? 90 : -90;
-	allMedia.get(currMediaHash).rotation = (rotation + 360) % 360;
+	if (rotation == null) {
+		rotation = 0;
+	}
+	rotation = (rotation + ((clockwise) ? 90 : -90) + 360) % 360;
+	allMedia.get(currMediaHash).rotation = rotation;
 	rotateLightboxImg(
-		allMedia.get(currMediaHash).rotation,
+		rotation,
 		(infoPanelOpen) ? document.getElementById('info-panel').clientWidth : 0
 	);
 
