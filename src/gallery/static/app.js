@@ -3,6 +3,7 @@ import { createPathButtons } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
 import { hideLightbox, rotateLightboxImg, showLightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
+import { createToast } from "./ui/toast.js";
 
 let allMedia = new Map();
 let allMediaIdx = [];
@@ -24,10 +25,6 @@ let currentTagEdit = '';
 
 let currentPath = null;
 const TAGS_CACHE = 'tags-cache';
-
-const TOAST_CONTAINER = document.getElementById('toast-container');
-const FIRST_TOAST = document.getElementById('first-toast');
-let lastToast = FIRST_TOAST;
 
 const Modes = {
 	none: 0,
@@ -650,32 +647,6 @@ async function removeTag() {
 		toastMsg: `Successfully removed ${data['tags'].length} tags`,
 		errorPrefix: "Error removing tag:<br>"
 	});
-}
-
-function createToast(msg, bgColor) {
-	const toast = document.createElement('div');
-	toast.classList.add('toast-banner');
-	toast.innerText = msg;
-	toast.style.backgroundColor = bgColor;
-
-	// Keep previous toast on top of new
-	TOAST_CONTAINER.insertBefore(toast, lastToast);
-
-	lastToast = toast;
-	// Smooth appearance
-	setTimeout(() => {
-		toast.style.transform = 'translateY(0px)';
-	}, 0);
-	// Smooth disappearance
-	setTimeout(() => {
-		toast.style.transform = 'translateY(4em)';
-		setTimeout(() => {
-			if (lastToast === toast) {
-				lastToast = FIRST_TOAST;
-			}
-			TOAST_CONTAINER.removeChild(toast);
-		}, 600);
-	}, 4000);
 }
 
 function toggleTagEditMode() {
