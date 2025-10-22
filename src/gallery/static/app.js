@@ -1,16 +1,6 @@
 import { clearCache, getJSONCache } from "./cache.js";
 import { EVENTNAMES, galleryEvents } from "./events/galleryevents.js";
-import {
-	getAllMediaIndexed,
-	getCurrentMedia,
-	getCurrentMediaHash,
-	getCurrentMediaIndex,
-	getHashesAtIndices,
-	getMedia,
-	getMediaListSize,
-	setCurrentMedia,
-	setNewMedia
-} from "./states/media.js";
+import { mediaState } from "./states/media.js";
 import { createPathButtons } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
 import { isInfoPanelOpen, openInfoPanel, setInfoPanelClosed, updateInfoPanel } from "./ui/infopanel.js";
@@ -57,13 +47,13 @@ for (let i = 0; i < sheet.length; i++) {
 async function updateAllMedia(queryParams='') {
 	const response = await fetch('/api/media' + queryParams);
 	const jsonResp = await response.json();
-	setNewMedia(jsonResp['data']);
+	mediaState.setNewMedia(jsonResp['data']);
 }
 
 async function loadMedia({pushState = true} = {}) {
 	if (window.location.pathname.startsWith('/lightbox/')) {
 		const mediaHash = window.location.pathname.slice(10);
-		if (getMedia(mediaHash) == null) {
+		if (mediaState.getMedia(mediaHash) == null) {
 			await updateAllMedia();
 		}
 		await openLightbox({hash: mediaHash, updateHistory: pushState});
@@ -212,12 +202,12 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 
 		updateStats();
 
-		if (getMediaListSize() === 0) {
+		if (mediaState.getMediaListSize() === 0) {
 			GALLERY_CONTAINER.innerHTML = '<div class="error">No images found.</div>';
 		}
 		else {
 			renderGallery({
-				indexedMedia: getAllMediaIndexed(),
+				indexedMedia: mediaState.getAllMediaIndexed(),
 				parentElem: GALLERY_CONTAINER,
 				handleImgClick: openLightbox,
 				handleCheckboxMouseDown: handleCheckboxMouseDown,
@@ -225,7 +215,7 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 			});
 		}
 
-		setCurrentMedia(0);
+		mediaState.setCurrentMedia(0);
 	} catch (error) {
 		console.error('Error loading images:', error);
 		GALLERY_CONTAINER.innerHTML = '<div class="error">Error loading images. Please check the console for details.</div>';
@@ -259,22 +249,22 @@ function handleTagButton(tag) {
 }
 
 function updateStats() {
-	STATS_ELEM.textContent = `${getMediaListSize()} items • Window: ${window.innerWidth}x${window.innerHeight}px`;
+	STATS_ELEM.textContent = `${mediaState.getMediaListSize()} items • Window: ${window.innerWidth}x${window.innerHeight}px`;
 }
 
 // Provide either idx or hash, if both present idx overwrites hash
 async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 	activeMode = Modes.lightbox;
 	if (idx !== null) {
-		setCurrentMedia(idx);
-		hash = getCurrentMediaHash();
+		mediaState.setCurrentMedia(idx);
+		hash = mediaState.getCurrentMediaHash();
 	}
 	else if (hash == null) {
 		console.error("No index or hash provided!");
 		return;
 	}
 
-	const media = getMedia(hash);
+	const media = mediaState.getMedia(hash);
 	showLightbox({
 		hash: hash,
 		mediaName: media.name,
@@ -291,11 +281,11 @@ async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 	if (isInfoPanelOpen()) {
 		await updateInfoPanel({
 			media: {
-				hash: getCurrentMediaHash(),
-				idx: getCurrentMediaIndex(),
-				...getCurrentMedia()
+				hash: mediaState.getCurrentMediaHash(),
+				idx: mediaState.getCurrentMediaIndex(),
+				...mediaState.getCurrentMedia()
 			},
-			mediaCount: getMediaListSize(),
+			mediaCount: mediaState.getMediaListSize(),
 			handlePathButtons: addPathFilter,
 			handleTagButtons: handleTagButton
 		});
@@ -312,14 +302,14 @@ function closeLightbox({pushState = true} = {}) {
 
 async function nextMedia() {
 	document.getElementById('lightbox-vid').removeAttribute('src');
-	setCurrentMedia(1, true);
-	await openLightbox({idx: getCurrentMediaIndex()});
+	mediaState.setCurrentMedia(1, true);
+	await openLightbox({idx: mediaState.getCurrentMediaIndex()});
 }
 
 async function prevMedia() {
 	document.getElementById('lightbox-vid').removeAttribute('src');
-	setCurrentMedia(-1, true);
-	await openLightbox({idx: getCurrentMediaIndex()});
+	mediaState.setCurrentMedia(-1, true);
+	await openLightbox({idx: mediaState.getCurrentMediaIndex()});
 }
 
 // Toggle info panel
@@ -335,16 +325,16 @@ galleryEvents.on(
 		document.getElementById('lightbox-button-info-panel').classList.add('active');
 		await openInfoPanel({
 			media: {
-				hash: getCurrentMediaHash(),
-				idx: getCurrentMediaIndex(),
-				...getCurrentMedia()
+				hash: mediaState.getCurrentMediaHash(),
+				idx: mediaState.getCurrentMediaIndex(),
+				...mediaState.getCurrentMedia()
 			},
-			mediaCount: getMediaListSize(),
+			mediaCount: mediaState.getMediaListSize(),
 			handlePathButtons: addPathFilter,
 			handleTagButtons: handleTagButton
 		});
 		rotateLightboxImg(
-			getCurrentMedia().rotation,
+			mediaState.getCurrentMedia().rotation,
 			document.getElementById('info-panel').clientWidth
 		);
 	}
@@ -359,7 +349,7 @@ function closeInfoPanel() {
 
 async function rotate(clockwise) {
 	const err = await api_rotate({
-		hash: getCurrentMediaHash(),
+		hash: mediaState.getCurrentMediaHash(),
 		clockwise: clockwise
 	});
 	if (err) {
@@ -368,14 +358,14 @@ async function rotate(clockwise) {
 	}
 
 	// Apply now
-	let rotation = getCurrentMedia().rotation;
+	let rotation = mediaState.getCurrentMedia().rotation;
 	if (rotation == null) {
 		rotation = 0;
 	}
 	rotation = (rotation + ((clockwise) ? 90 : -90) + 360) % 360;
-	getCurrentMedia().rotation = rotation;
+	mediaState.getCurrentMedia().rotation = rotation;
 	rotateLightboxImg(
-		getCurrentMedia().rotation,
+		mediaState.getCurrentMedia().rotation,
 		document.getElementById('info-panel').clientWidth
 	);
 
@@ -383,11 +373,11 @@ async function rotate(clockwise) {
 	if (isInfoPanelOpen()) {
 		await updateInfoPanel({
 			media: {
-				hash: getCurrentMediaHash(),
-				idx: getCurrentMediaIndex(),
-				...getCurrentMedia()
+				hash: mediaState.getCurrentMediaHash(),
+				idx: mediaState.getCurrentMediaIndex(),
+				...mediaState.getCurrentMedia()
 			},
-			mediaCount: getMediaListSize(),
+			mediaCount: mediaState.getMediaListSize(),
 			handlePathButtons: addPathFilter,
 			handleTagButtons: handleTagButton
 		});
@@ -428,9 +418,9 @@ function handleResize() {
 	clearTimeout(resizeTimeout);
 	resizeTimeout = setTimeout(() => {
 		updateStats();
-		if (getMediaListSize() > 0) {
+		if (mediaState.getMediaListSize() > 0) {
 			renderGallery({
-				indexedMedia: getAllMediaIndexed(),
+				indexedMedia: mediaState.getAllMediaIndexed(),
 				parentElem: GALLERY_CONTAINER,
 				handleImgClick: openLightbox,
 				handleCheckboxMouseDown: handleCheckboxMouseDown,
@@ -524,7 +514,7 @@ async function tagPromptRequest({data, method, toastMsg, errorPrefix}) {
 async function addTag() {
 	let data = {
 		'tag': [],
-		'hashes': getHashesAtIndices(Array.from(selectedItems))
+		'hashes': mediaState.getHashesAtIndices(Array.from(selectedItems))
 	};
 
 	for (const t of document.getElementById('input-input').value.split(' ')) {
@@ -579,7 +569,7 @@ function toggleTagEditMode() {
 }
 
 function selectModeSelectAll() {
-	for (let i=0; i<getMediaListSize(); i++) {
+	for (let i=0; i<mediaState.getMediaListSize(); i++) {
 		selectedItems.add(i);
 	}
 	document.querySelectorAll('.selection-checkbox').forEach(e => {
@@ -589,7 +579,7 @@ function selectModeSelectAll() {
 }
 
 function selectModeDeselectAll() {
-	for (let i=0; i<getMediaListSize(); i++) {
+	for (let i=0; i<mediaState.getMediaListSize(); i++) {
 		selectedItems.delete(i);
 	}
 	document.querySelectorAll('.selection-checkbox').forEach(e => {
@@ -716,7 +706,7 @@ document.addEventListener('keydown', (e) => {
 					break;
 				case 'a':
 					// Deselect all if all is selected
-					if (selectedItems.size === getMediaListSize()) {
+					if (selectedItems.size === mediaState.getMediaListSize()) {
 						selectModeDeselectAll();
 					}
 					else {
@@ -763,7 +753,7 @@ document.addEventListener('keydown', (e) => {
 			switch (e.key) {
 				case 'ArrowRight':
 				case 'ArrowLeft':
-					openLightbox({idx: getCurrentMediaIndex()});
+					openLightbox({idx: mediaState.getCurrentMediaIndex()});
 					break;
 				case 's':
 					SELECT_MODE_CHECKBOX.checked = true;
