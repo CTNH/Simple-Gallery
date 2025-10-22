@@ -17,7 +17,7 @@ class InfoPanel {
 	async open(updateInfoPanelArgs) {
 		this.isopen = true;
 		this.PANEL.classList.add('active');
-		await update(updateInfoPanelArgs);
+		await this.update(updateInfoPanelArgs);
 	}
 
 	setClosed() {

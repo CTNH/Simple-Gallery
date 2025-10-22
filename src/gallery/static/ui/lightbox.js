@@ -12,10 +12,10 @@ class Lightbox {
 			this.LIGHTBOX_VID.addEventListener(event, (e) => {
 				const vid = e.target;
 				if (vid.paused || vid.ended) {
-					showLightboxButtons();
+					this.showLightboxButtons();
 				}
 				else {
-					hideLightboxButtons();
+					this.hideLightboxButtons();
 				}
 			})
 		);
@@ -51,7 +51,7 @@ class Lightbox {
 		}
 
 		this.LIGHTBOX.classList.add('active');
-		showLightboxButtons();
+		this.showLightboxButtons();
 		if (vid) {
 			this.LIGHTBOX_VID
 				.setAttrs({
@@ -63,7 +63,7 @@ class Lightbox {
 				.removeClass('active');
 		}
 		else {
-			rotateLightboxImg(mediaRotation, infoPanelWidthOffset);
+			this.rotateLightboxImg(mediaRotation, infoPanelWidthOffset);
 			this.LIGHTBOX_IMG
 				.setAttrs({
 					src: `/media/${hash}/original`,
@@ -82,7 +82,7 @@ class Lightbox {
 		this.LIGHTBOX_VID.getElem().removeAttribute('src');
 		this.LIGHTBOX_VID.getElem().load();
 
-		hideLightboxButtons();
+		this.hideLightboxButtons();
 
 		this.LIGHTBOX.classList.remove('active');
 		document.getElementById('lightbox-button-row').classList.remove('active');
