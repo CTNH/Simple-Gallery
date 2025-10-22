@@ -4,7 +4,7 @@ import { mediaState } from "./states/media.js";
 import { createPathButtons } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
 import { isInfoPanelOpen, openInfoPanel, setInfoPanelClosed, updateInfoPanel } from "./ui/infopanel.js";
-import { hideLightbox, rotateLightboxImg, showLightbox } from "./ui/lightbox.js";
+import { lightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
 import { createToast } from "./ui/toast.js";
 import { api_rotate } from "./utils/api.js";
@@ -265,7 +265,7 @@ async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 	}
 
 	const media = mediaState.getMedia(hash);
-	showLightbox({
+	lightbox.showLightbox({
 		hash: hash,
 		mediaName: media.name,
 		vid: media.video,
@@ -294,7 +294,7 @@ async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 }
 
 function closeLightbox({pushState = true} = {}) {
-	hideLightbox({ pushState: pushState });
+	lightbox.hideLightbox({ pushState: pushState });
 
 	activeMode = Modes.none;
 	document.getElementById('info-panel').classList.remove('active');
@@ -333,7 +333,7 @@ galleryEvents.on(
 			handlePathButtons: addPathFilter,
 			handleTagButtons: handleTagButton
 		});
-		rotateLightboxImg(
+		lightbox.rotateLightboxImg(
 			mediaState.getCurrentMedia().rotation,
 			document.getElementById('info-panel').clientWidth
 		);
@@ -364,7 +364,7 @@ async function rotate(clockwise) {
 	}
 	rotation = (rotation + ((clockwise) ? 90 : -90) + 360) % 360;
 	mediaState.getCurrentMedia().rotation = rotation;
-	rotateLightboxImg(
+	lightbox.rotateLightboxImg(
 		mediaState.getCurrentMedia().rotation,
 		document.getElementById('info-panel').clientWidth
 	);
