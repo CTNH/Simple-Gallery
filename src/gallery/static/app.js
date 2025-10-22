@@ -1,4 +1,5 @@
 import { clearCache, getJSONCache } from "./cache.js";
+import { EVENTNAMES, galleryEvents } from "./events/galleryevents.js";
 import {
 	getAllMediaIndexed,
 	getCurrentMedia,
@@ -12,7 +13,7 @@ import {
 } from "./states/media.js";
 import { createPathButtons } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
-import { updateInfoPanel } from "./ui/infopanel.js";
+import { isInfoPanelOpen, openInfoPanel, setInfoPanelClosed, updateInfoPanel } from "./ui/infopanel.js";
 import { hideLightbox, rotateLightboxImg, showLightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
 import { createToast } from "./ui/toast.js";
@@ -24,7 +25,6 @@ const GALLERY_CONTAINER = document.getElementById('gallery');
 const STATS_ELEM = document.getElementById('stats');
 const SELECT_MODE_CHECKBOX = document.getElementById('select-mode-checkbox');
 let lastWinWidth = window.innerWidth;
-let infoPanelOpen = false;
 
 let selectedItems = new Set();
 let mouseDown = false;
@@ -160,7 +160,6 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 	closeLightbox({pushState: pushState});
 
 	currentPath = path;
-	setCurrentMedia(0);
 
 	try {
 		let queryparam = [];
@@ -225,6 +224,8 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 				handleCheckboxMouseEnter: handleCheckboxMouseEnter
 			});
 		}
+
+		setCurrentMedia(0);
 	} catch (error) {
 		console.error('Error loading images:', error);
 		GALLERY_CONTAINER.innerHTML = '<div class="error">Error loading images. Please check the console for details.</div>';
@@ -281,13 +282,13 @@ async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 		updateHistory: updateHistory,
 		mediaRotation: media.rotation,
 		infoPanelWidthOffset: (
-			infoPanelOpen
+			isInfoPanelOpen()
 				? document.getElementById('info-panel').clientWidth : 0
 		)
 	});
 
 	// Update info panel if it's open
-	if (infoPanelOpen) {
+	if (isInfoPanelOpen()) {
 		await updateInfoPanel({
 			media: {
 				hash: getCurrentMediaHash(),
@@ -321,49 +322,39 @@ async function prevMedia() {
 	await openLightbox({idx: getCurrentMediaIndex()});
 }
 
-async function toggleInfoPanel() {
-	const infoButton = document.getElementById('lightbox-button-info-panel');
+// Toggle info panel
+galleryEvents.on(
+	EVENTNAMES.TOGGLE_INFO_PANEL, 
+	async () => {
+		if (isInfoPanelOpen()) {
+			closeInfoPanel();
+			return;
+		}
 
-	if (infoPanelOpen) {
-		closeInfoPanel();
-		infoButton.classList.remove('active');
-	} else {
-		await openInfoPanel();
-		infoButton.classList.add('active');
+		document.querySelector('.lightbox').classList.add('info-open');
+		document.getElementById('lightbox-button-info-panel').classList.add('active');
+		await openInfoPanel({
+			media: {
+				hash: getCurrentMediaHash(),
+				idx: getCurrentMediaIndex(),
+				...getCurrentMedia()
+			},
+			mediaCount: getMediaListSize(),
+			handlePathButtons: addPathFilter,
+			handleTagButtons: handleTagButton
+		});
+		rotateLightboxImg(
+			getCurrentMedia().rotation,
+			document.getElementById('info-panel').clientWidth
+		);
 	}
-}
-
-async function openInfoPanel() {
-	const infoPanel = document.getElementById('info-panel');
-
-	infoPanelOpen = true;
-	infoPanel.classList.add('active');
-	document.querySelector('.lightbox').classList.add('info-open');
-	rotateLightboxImg(
-		getCurrentMedia().rotation,
-		document.getElementById('info-panel').clientWidth
-	);
-	await updateInfoPanel({
-		media: {
-			hash: getCurrentMediaHash(),
-			idx: getCurrentMediaIndex(),
-			...getCurrentMedia()
-		},
-		mediaCount: getMediaListSize(),
-		handlePathButtons: addPathFilter,
-		handleTagButtons: handleTagButton
-	});
-}
+);
 
 function closeInfoPanel() {
-	const infoPanel = document.getElementById('info-panel');
-	const lightboxContent = document.querySelector('.lightbox');
-	const infoButton = document.getElementById('lightbox-button-info-panel');
-
-	infoPanelOpen = false;
-	infoPanel.classList.remove('active');
-	lightboxContent.classList.remove('info-open');
-	infoButton.classList.remove('active');
+	setInfoPanelClosed();
+	document.getElementById('info-panel').classList.remove('active');
+	document.querySelector('.lightbox').classList.remove('info-open');
+	document.getElementById('lightbox-button-info-panel').classList.remove('active');
 }
 
 async function rotate(clockwise) {
@@ -384,12 +375,12 @@ async function rotate(clockwise) {
 	rotation = (rotation + ((clockwise) ? 90 : -90) + 360) % 360;
 	getCurrentMedia().rotation = rotation;
 	rotateLightboxImg(
-		rotation,
-		(infoPanelOpen) ? document.getElementById('info-panel').clientWidth : 0
+		getCurrentMedia().rotation,
+		document.getElementById('info-panel').clientWidth
 	);
 
 	// Update info panel if it's open
-	if (infoPanelOpen) {
+	if (isInfoPanelOpen()) {
 		await updateInfoPanel({
 			media: {
 				hash: getCurrentMediaHash(),
@@ -448,7 +439,7 @@ function handleResize() {
 		}
 
 		// Close info panel if switching between mobile/desktop
-		if (infoPanelOpen) {
+		if (isInfoPanelOpen()) {
 			closeInfoPanel();
 		}
 	}, 350);
@@ -661,9 +652,6 @@ document.getElementById('lightbox-button-counter-clockwise').addEventListener('c
 document.getElementById('lightbox-button-clockwise').addEventListener('click', () => {
 	rotate(true);
 });
-document.getElementById('lightbox-button-info-panel').addEventListener('click', () => {
-	toggleInfoPanel();
-});
 document.getElementById('info-panel-close').addEventListener('click', () => {
 	closeInfoPanel();
 });
@@ -714,7 +702,7 @@ document.addEventListener('keydown', (e) => {
 					prevMedia();
 					break;
 				case 'i':
-					toggleInfoPanel();
+					galleryEvents.trigger(EVENTNAMES.TOGGLE_INFO_PANEL);
 					break;
 			}
 			break;

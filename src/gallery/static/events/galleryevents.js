@@ -1,8 +1,8 @@
-class GalleryEvents extends EventTarget {
-	static EVENT = {
-		UPDATE: 'update'
-	};
+export const EVENTNAMES = {
+	TOGGLE_INFO_PANEL: 'toggleInfoPanel',
+};
 
+class GalleryEvents extends EventTarget {
 	trigger(event, details = null) {
 		this.dispatchEvent(
 			new CustomEvent( event, { detail: details } )

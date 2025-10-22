@@ -6,6 +6,23 @@ import { createDiv, ElemWrapper } from './elements.js';
 const CONTENT = document.getElementById('info-content');
 const TAGS = {};
 
+const PANEL = document.getElementById('info-panel');
+let isopen = false;
+
+export function isInfoPanelOpen() {
+	return isopen;
+}
+
+export async function openInfoPanel(updateInfoPanelArgs) {
+	isopen = true;
+	PANEL.classList.add('active');
+	await updateInfoPanel(updateInfoPanelArgs);
+}
+
+export function setInfoPanelClosed() {
+	isopen = false;
+}
+
 export async function updateInfoPanel({
 	media,
 	mediaCount,

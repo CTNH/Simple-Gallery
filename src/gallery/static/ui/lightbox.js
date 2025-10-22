@@ -1,3 +1,4 @@
+import { EVENTNAMES, galleryEvents } from "../events/galleryevents.js";
 import { getElemWrapperFromID } from "./elements.js";
 
 const LIGHTBOX = document.getElementById('lightbox');
@@ -111,4 +112,8 @@ export function rotateLightboxImg(mediaRotation, infoPanelWidthOffset) {
 		LIGHTBOX_IMG.setStyle('transform', '');
 	}
 }
+
+document.getElementById('lightbox-button-info-panel').addEventListener('click', () => {
+	galleryEvents.trigger(EVENTNAMES.TOGGLE_INFO_PANEL);
+});
 
