@@ -18,7 +18,6 @@ import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js"
 import { createToast } from "./ui/toast.js";
 import { api_rotate } from "./utils/api.js";
 
-let allTags = {};
 const activeTags = new Set();
 const activeTypes = new Set();
 const GALLERY_CONTAINER = document.getElementById('gallery');
@@ -336,11 +335,10 @@ async function toggleInfoPanel() {
 
 async function openInfoPanel() {
 	const infoPanel = document.getElementById('info-panel');
-	const lightboxContent = document.querySelector('.lightbox');
 
 	infoPanelOpen = true;
 	infoPanel.classList.add('active');
-	lightboxContent.classList.add('info-open');
+	document.querySelector('.lightbox').classList.add('info-open');
 	rotateLightboxImg(
 		getCurrentMedia().rotation,
 		document.getElementById('info-panel').clientWidth
