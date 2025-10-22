@@ -3,7 +3,7 @@ import { EVENTNAMES, galleryEvents } from "./events/galleryevents.js";
 import { mediaState } from "./states/media.js";
 import { createPathButtons } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
-import { isInfoPanelOpen, openInfoPanel, setInfoPanelClosed, updateInfoPanel } from "./ui/infopanel.js";
+import { infoPanel } from "./ui/infopanel.js";
 import { lightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
 import { createToast } from "./ui/toast.js";
@@ -272,14 +272,14 @@ async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 		updateHistory: updateHistory,
 		mediaRotation: media.rotation,
 		infoPanelWidthOffset: (
-			isInfoPanelOpen()
+			infoPanel.isOpen()
 				? document.getElementById('info-panel').clientWidth : 0
 		)
 	});
 
 	// Update info panel if it's open
-	if (isInfoPanelOpen()) {
-		await updateInfoPanel({
+	if (infoPanel.isOpen()) {
+		await infoPanel.update({
 			media: {
 				hash: mediaState.getCurrentMediaHash(),
 				idx: mediaState.getCurrentMediaIndex(),
@@ -316,14 +316,14 @@ async function prevMedia() {
 galleryEvents.on(
 	EVENTNAMES.TOGGLE_INFO_PANEL, 
 	async () => {
-		if (isInfoPanelOpen()) {
+		if (infoPanel.isOpen()) {
 			closeInfoPanel();
 			return;
 		}
 
 		document.querySelector('.lightbox').classList.add('info-open');
 		document.getElementById('lightbox-button-info-panel').classList.add('active');
-		await openInfoPanel({
+		await infoPanel.open({
 			media: {
 				hash: mediaState.getCurrentMediaHash(),
 				idx: mediaState.getCurrentMediaIndex(),
@@ -341,7 +341,7 @@ galleryEvents.on(
 );
 
 function closeInfoPanel() {
-	setInfoPanelClosed();
+	infoPanel.setClosed();
 	document.getElementById('info-panel').classList.remove('active');
 	document.querySelector('.lightbox').classList.remove('info-open');
 	document.getElementById('lightbox-button-info-panel').classList.remove('active');
@@ -370,8 +370,8 @@ async function rotate(clockwise) {
 	);
 
 	// Update info panel if it's open
-	if (isInfoPanelOpen()) {
-		await updateInfoPanel({
+	if (infoPanel.isOpen()) {
+		await infoPanel.update({
 			media: {
 				hash: mediaState.getCurrentMediaHash(),
 				idx: mediaState.getCurrentMediaIndex(),
@@ -429,7 +429,7 @@ function handleResize() {
 		}
 
 		// Close info panel if switching between mobile/desktop
-		if (isInfoPanelOpen()) {
+		if (infoPanel.isOpen()) {
 			closeInfoPanel();
 		}
 	}, 350);
