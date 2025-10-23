@@ -318,19 +318,10 @@ body {
 		align-items: stretch;
 	}
 
-	.lightbox.info-open {
-		justify-content: flex-start;
-	}
-
 	#lightbox-media-container {
 		flex: 0 0 auto;
 		min-height: 400px;
 		display: flex;
-	}
-
-	.lightbox.info-open #lightbox-media-container {
-		height: 60vh;
-		min-height: 300px;
 	}
 
 	.info-panel {

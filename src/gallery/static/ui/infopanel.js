@@ -1,3 +1,4 @@
+import { EVENTNAMES, galleryEvents } from '../events/galleryevents.js';
 import { api_getTagsFromHash } from '../utils/api.js';
 import { formatDate, formatFileSize } from '../utils/formatter.js';
 import { addTagButtons, createPathButtons } from './dom.js';
@@ -18,10 +19,13 @@ class InfoPanel {
 		this.isopen = true;
 		this.PANEL.classList.add('active');
 		await this.update(updateInfoPanelArgs);
+		galleryEvents.trigger(EVENTNAMES.INFO_PANEL_OPENED);
 	}
 
-	setClosed() {
+	close() {
 		this.isopen = false;
+		this.PANEL.classList.remove('active');
+		galleryEvents.trigger(EVENTNAMES.INFO_PANEL_CLOSED);
 	}
 
 	async update({

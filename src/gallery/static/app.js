@@ -317,12 +317,10 @@ galleryEvents.on(
 	EVENTNAMES.TOGGLE_INFO_PANEL, 
 	async () => {
 		if (infoPanel.isOpen()) {
-			closeInfoPanel();
+			infoPanel.close();
 			return;
 		}
 
-		document.querySelector('.lightbox').classList.add('info-open');
-		document.getElementById('lightbox-button-info-panel').classList.add('active');
 		await infoPanel.open({
 			media: {
 				hash: mediaState.getCurrentMediaHash(),
@@ -339,13 +337,6 @@ galleryEvents.on(
 		);
 	}
 );
-
-function closeInfoPanel() {
-	infoPanel.setClosed();
-	document.getElementById('info-panel').classList.remove('active');
-	document.querySelector('.lightbox').classList.remove('info-open');
-	document.getElementById('lightbox-button-info-panel').classList.remove('active');
-}
 
 async function rotate(clockwise) {
 	const err = await api_rotate({
@@ -429,7 +420,7 @@ function handleResize() {
 
 		// Close info panel if switching between mobile/desktop
 		if (infoPanel.isOpen()) {
-			closeInfoPanel();
+			infoPanel.close();
 		}
 	}, 350);
 }
@@ -642,7 +633,7 @@ document.getElementById('lightbox-button-clockwise').addEventListener('click', (
 	rotate(true);
 });
 document.getElementById('info-panel-close').addEventListener('click', () => {
-	closeInfoPanel();
+	infoPanel.close();
 });
 document.getElementById('scroll-to-top-button').addEventListener('click', () => {
 	window.scrollTo({top: 0, behavior: 'smooth'});

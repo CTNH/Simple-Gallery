@@ -19,6 +19,21 @@ class Lightbox {
 				}
 			})
 		);
+
+		galleryEvents.on(
+			EVENTNAMES.INFO_PANEL_OPENED,
+			() => {
+				this.LIGHTBOX.classList.add('info-open');
+				document.getElementById('lightbox-button-info-panel').classList.add('active');
+			}
+		);
+		galleryEvents.on(
+			EVENTNAMES.INFO_PANEL_CLOSED,
+			() => {
+				this.LIGHTBOX.classList.remove('info-open');
+				document.getElementById('lightbox-button-info-panel').classList.remove('active');
+			}
+		);
 	}
 
 	showLightboxButtons() {
