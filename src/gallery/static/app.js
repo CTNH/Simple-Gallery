@@ -3,7 +3,8 @@ import { EVENTNAMES, galleryEvents } from "./events/galleryevents.js";
 import { mediaState } from "./states/media.js";
 import { mouseState } from "./states/mouse.js";
 import { selectionState } from "./states/selection.js";
-import { createPathButtons } from "./ui/dom.js";
+import { touchState } from "./states/touch.js";
+import { createPathButtons, ismobile } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
 import { infoPanel } from "./ui/infopanel.js";
 import { lightbox } from "./ui/lightbox.js";
@@ -211,7 +212,9 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 				parentElem: GALLERY_CONTAINER,
 				handleImgClick: openLightbox,
 				handleCheckboxMouseDown: handleCheckboxMouseDown,
-				handleCheckboxMouseEnter: handleCheckboxMouseEnter
+				handleCheckboxMouseEnter: handleCheckboxMouseEnter,
+				handleCheckboxTouchStart: handleCheckboxTouchStart,
+				handleCheckboxTouchEnd: handleCheckboxTouchEnd,
 			});
 		}
 
@@ -389,7 +392,38 @@ function updateSelectModeMediaCount() {
 	document.getElementById('select-mode-media-count').innerText = selectionState.getCount();
 }
 
+function handleCheckboxTouchStart(checkbox, imgIdx) {
+	const prevSelect = selectionState.getLast();
+	setTimeout(() => {
+		if (!touchState.isLongTouch()) return;
+
+		let start = prevSelect, end = imgIdx;
+		if (start > end)
+			[start, end] = [end, start];
+
+		const elems = document.querySelectorAll('.selection-checkbox');
+		const checked = !checkbox.checked;
+		const action = checked ? 'add' : 'remove';
+		for (let i = start; i < end+1; i++) {
+			elems[i].checked = checked;
+			elems[i].classList[action]('selected');
+			selectionState[action](i);
+		}
+		updateSelectModeMediaCount();
+	}, 250);
+}
+function handleCheckboxTouchEnd(checkbox, imgIdx) {
+	if (touchState.hasMoved()) return;
+	selectionState.setLast(imgIdx);
+	if (touchState.isLongTouch()) return;
+
+	checkbox.checked = !checkbox.checked;
+	checkSelect = checkbox.checked;
+	toggleMediaSelection(checkbox, imgIdx);
+}
+
 function handleCheckboxMouseDown(checkbox, imgIdx) {
+	if (ismobile()) return;
 	checkbox.checked = !checkbox.checked;
 	checkSelect = checkbox.checked;
 	toggleMediaSelection(checkbox, imgIdx);
@@ -414,7 +448,9 @@ function handleResize() {
 				parentElem: GALLERY_CONTAINER,
 				handleImgClick: openLightbox,
 				handleCheckboxMouseDown: handleCheckboxMouseDown,
-				handleCheckboxMouseEnter: handleCheckboxMouseEnter
+				handleCheckboxMouseEnter: handleCheckboxMouseEnter,
+				handleCheckboxTouchStart: handleCheckboxTouchStart,
+				handleCheckboxTouchEnd: handleCheckboxTouchEnd,
 			});
 		}
 

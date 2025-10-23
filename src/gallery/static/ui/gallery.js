@@ -53,7 +53,9 @@ function calculateRows(ratios, viewWidth, targetRowHeight) {
 
 export function renderGallery({
 	indexedMedia, parentElem,
-	handleImgClick, handleCheckboxMouseDown, handleCheckboxMouseEnter
+	handleImgClick,
+	handleCheckboxMouseDown, handleCheckboxMouseEnter,
+	handleCheckboxTouchStart, handleCheckboxTouchEnd
 }) {
 	// Lazy load images
 	setupObserver();
@@ -97,8 +99,10 @@ export function renderGallery({
 			const checkbox = createDiv({ className: 'selection-checkbox' });
 			checkbox.getElem().checked = false;
 			checkbox
-				.addEventListener('mousedown', (e) => handleCheckboxMouseDown(checkbox.getElem(), i))
-				.addEventListener('mouseenter', (e) => handleCheckboxMouseEnter(checkbox.getElem(), i))
+				.addEventListener('mousedown', () => handleCheckboxMouseDown(checkbox.getElem(), i))
+				.addEventListener('mouseenter', () => handleCheckboxMouseEnter(checkbox.getElem(), i))
+				.addEventListener('touchstart', () => handleCheckboxTouchStart(checkbox.getElem(), i))
+				.addEventListener('touchend', () => handleCheckboxTouchEnd(checkbox.getElem(), i))
 				.appendtoWrapper(imgContainer);
 
 

@@ -1,5 +1,6 @@
 class SelectionState {
 	selected = new Set();
+	lastSelected = null;
 
 	clear() {
 		this.selected = new Set();
@@ -28,6 +29,13 @@ class SelectionState {
 
 	getArray() {
 		return Array.from(this.selected);
+	}
+
+	setLast(idx) {
+		this.lastSelected = idx;
+	}
+	getLast() {
+		return this.lastSelected;
 	}
 }
 
