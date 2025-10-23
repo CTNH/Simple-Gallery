@@ -1,5 +1,6 @@
 import { ElemWrapper, createDiv, createLazyImg } from './elements.js';
 import { observer, setupObserver } from '../events/observers.js';
+import { ismobile } from './dom.js';
 
 // Return RowInfo[], where RowInfo = {'start': int, 'end': int, 'count': int, 'height': int}
 function calculateRows(ratios, viewWidth, targetRowHeight) {
@@ -64,7 +65,7 @@ export function renderGallery({
 			return media.aspectRatio;
 		}),
 		window.innerWidth - 16,
-		200
+		(ismobile()) ? 140 : 200
 	).forEach(row => {
 		const rowElem = createDiv({ className: 'gallery-row' });
 

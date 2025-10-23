@@ -1,6 +1,8 @@
 import { clearCache, getJSONCache } from "./cache.js";
 import { EVENTNAMES, galleryEvents } from "./events/galleryevents.js";
 import { mediaState } from "./states/media.js";
+import { mouseState } from "./states/mouse.js";
+import { selectionState } from "./states/selection.js";
 import { createPathButtons } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
 import { infoPanel } from "./ui/infopanel.js";
@@ -16,8 +18,6 @@ const STATS_ELEM = document.getElementById('stats');
 const SELECT_MODE_CHECKBOX = document.getElementById('select-mode-checkbox');
 let lastWinWidth = window.innerWidth;
 
-let selectedItems = new Set();
-let mouseDown = false;
 let checkSelect = true;
 
 let currentTagEdit = '';
@@ -138,7 +138,7 @@ async function updateAllTags() {
 async function loadMediaByFilter({path = null, tags = [], types = [], pushState = true} = {}) {
 	activeTags.clear();
 	activeTypes.clear();
-	selectedItems = new Set();
+	selectionState.clear();
 	updateSelectModeMediaCount();
 	SELECT_MODE_CHECKBOX.checked = false;
 
@@ -385,18 +385,17 @@ async function rotate(clockwise) {
 }
 
 function toggleMediaSelection(e, mediaIdx) {
-	if (selectedItems.has(mediaIdx)) {
-		selectedItems.delete(mediaIdx);
-		e.target.classList.remove('selected');
-	} else {
-		selectedItems.add(mediaIdx);
+	if (selectionState.toggle(mediaIdx)) {
 		e.target.classList.add('selected');
+	}
+	else {
+		e.target.classList.remove('selected');
 	}
 	updateSelectModeMediaCount();
 }
 
 function updateSelectModeMediaCount() {
-	document.getElementById('select-mode-media-count').innerText = selectedItems.size;
+	document.getElementById('select-mode-media-count').innerText = selectionState.getCount();
 }
 
 function handleCheckboxMouseDown(e, checkbox, imgIdx) {
@@ -406,7 +405,7 @@ function handleCheckboxMouseDown(e, checkbox, imgIdx) {
 }
 
 function handleCheckboxMouseEnter(e, checkbox, imgIdx) {
-	if (mouseDown && (checkbox.checked !== checkSelect)) {
+	if (mouseState.isDown() && (checkbox.checked !== checkSelect)) {
 		checkbox.checked = !checkbox.checked;
 		toggleMediaSelection(e, imgIdx);
 	}
@@ -514,7 +513,7 @@ async function tagPromptRequest({data, method, toastMsg, errorPrefix}) {
 async function addTag() {
 	let data = {
 		'tag': [],
-		'hashes': mediaState.getHashesAtIndices(Array.from(selectedItems))
+		'hashes': mediaState.getHashesAtIndices(selectionState.getArray())
 	};
 
 	for (const t of document.getElementById('input-input').value.split(' ')) {
@@ -570,7 +569,7 @@ function toggleTagEditMode() {
 
 function selectModeSelectAll() {
 	for (let i=0; i<mediaState.getMediaListSize(); i++) {
-		selectedItems.add(i);
+		selectionState.add(i);
 	}
 	document.querySelectorAll('.selection-checkbox').forEach(e => {
 		e.classList.add('selected');
@@ -580,7 +579,7 @@ function selectModeSelectAll() {
 
 function selectModeDeselectAll() {
 	for (let i=0; i<mediaState.getMediaListSize(); i++) {
-		selectedItems.delete(i);
+		selectionState.remove(i);
 	}
 	document.querySelectorAll('.selection-checkbox').forEach(e => {
 		e.classList.remove('selected');
@@ -706,7 +705,7 @@ document.addEventListener('keydown', (e) => {
 					break;
 				case 'a':
 					// Deselect all if all is selected
-					if (selectedItems.size === mediaState.getMediaListSize()) {
+					if (selectionState.getCount() === mediaState.getMediaListSize()) {
 						selectModeDeselectAll();
 					}
 					else {
@@ -715,7 +714,7 @@ document.addEventListener('keydown', (e) => {
 					break;
 				case 'A':
 					// Select all if none is selected
-					if (selectedItems.size === 0) {
+					if (selectionState.getCount() === 0) {
 						selectModeSelectAll();
 					}
 					else {
@@ -766,25 +765,6 @@ document.addEventListener('keydown', (e) => {
 			break;
 	}
 });
-
-document.body.addEventListener('mousedown', () => {
-	mouseDown = true;
-});
-
-document.body.addEventListener('mouseup', () => {
-	mouseDown = false;
-});
-document.documentElement.addEventListener('mouseleave', (event) => {
-	if (
-		event.clientY <= 0 ||
-		event.clientX <= 0 ||
-		event.clientX >= window.innerWidth ||
-		event.clientY >= window.innerHeight
-	) {
-		mouseDown = false;
-	}
-});
-
 
 // Event listeners
 window.addEventListener('resize', () => {

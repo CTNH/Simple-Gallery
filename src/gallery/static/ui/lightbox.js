@@ -64,6 +64,8 @@ class Lightbox {
 		}
 		else {
 			this.rotateLightboxImg(mediaRotation, infoPanelWidthOffset);
+			// Temporary placeholder to be responsive
+			this.LIGHTBOX_IMG.setAttr('src', `/media/${hash}/thumbnail`);
 			this.LIGHTBOX_IMG
 				.setAttrs({
 					src: `/media/${hash}/original`,

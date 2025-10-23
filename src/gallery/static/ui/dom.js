@@ -40,3 +40,7 @@ export function addTagButtons(tags, handleButton, parent) {
 	});
 }
 
+export function ismobile() {
+	return (window.innerWidth <= 768);
+}
+
