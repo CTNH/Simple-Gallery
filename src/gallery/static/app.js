@@ -375,12 +375,12 @@ async function rotate(clockwise) {
 	}
 }
 
-function toggleMediaSelection(e, mediaIdx) {
+function toggleMediaSelection(checkbox, mediaIdx) {
 	if (selectionState.toggle(mediaIdx)) {
-		e.target.classList.add('selected');
+		checkbox.classList.add('selected');
 	}
 	else {
-		e.target.classList.remove('selected');
+		checkbox.classList.remove('selected');
 	}
 	updateSelectModeMediaCount();
 }
@@ -389,16 +389,16 @@ function updateSelectModeMediaCount() {
 	document.getElementById('select-mode-media-count').innerText = selectionState.getCount();
 }
 
-function handleCheckboxMouseDown(e, checkbox, imgIdx) {
+function handleCheckboxMouseDown(checkbox, imgIdx) {
 	checkbox.checked = !checkbox.checked;
 	checkSelect = checkbox.checked;
-	toggleMediaSelection(e, imgIdx);
+	toggleMediaSelection(checkbox, imgIdx);
 }
 
-function handleCheckboxMouseEnter(e, checkbox, imgIdx) {
+function handleCheckboxMouseEnter(checkbox, imgIdx) {
 	if (mouseState.isDown() && (checkbox.checked !== checkSelect)) {
 		checkbox.checked = !checkbox.checked;
-		toggleMediaSelection(e, imgIdx);
+		toggleMediaSelection(checkbox, imgIdx);
 	}
 }
 

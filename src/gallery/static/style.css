@@ -27,6 +27,8 @@ body {
 .gallery-media-container {
 	display: inline-block;
 	margin-right: 8px;
+	user-select: none;
+	-webkit-user-select: none;
 }
 
 .video-duration {
@@ -49,6 +51,8 @@ body {
 	cursor: pointer;
 	transition: opacity 0.3s ease;
 	object-fit: cover;
+	user-select: none;
+	-webkit-user-select: none;
 }
 
 .gallery-media:last-child {
@@ -644,6 +648,7 @@ body {
 	cursor: pointer;
 	transition: all 0.2s ease;
 	user-select: none;
+	-webkit-user-select: none;
 	opacity: 0;
 	pointer-events: none;
 }

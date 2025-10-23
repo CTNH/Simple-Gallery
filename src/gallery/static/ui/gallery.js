@@ -97,8 +97,8 @@ export function renderGallery({
 			const checkbox = createDiv({ className: 'selection-checkbox' });
 			checkbox.getElem().checked = false;
 			checkbox
-				.addEventListener('mousedown', (e) => handleCheckboxMouseDown(e, checkbox.getElem(), i))
-				.addEventListener('mouseenter', (e) => handleCheckboxMouseEnter(e, checkbox.getElem(), i))
+				.addEventListener('mousedown', (e) => handleCheckboxMouseDown(checkbox.getElem(), i))
+				.addEventListener('mouseenter', (e) => handleCheckboxMouseEnter(checkbox.getElem(), i))
 				.appendtoWrapper(imgContainer);
 
 
