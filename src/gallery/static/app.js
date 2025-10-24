@@ -189,22 +189,6 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 		pathFilter.innerHTML = '';
 		pathFilter.appendChild(createPathButtons(path, addPathFilter));
 
-		const activeTagsFilter = document.getElementById('filter-active-tags');
-		activeTagsFilter.innerHTML = '';
-		if (activeTags.size === 0) {
-			activeTagsFilter.innerText = "None";
-		}
-		else {
-			activeTags.forEach(tag => {
-				const a = document.createElement('a');
-				a.textContent = tag;
-				a.addEventListener('click', () => {
-					removeActiveFilters({ tags: [tag] });
-				});
-				activeTagsFilter.appendChild(a);
-			});
-		}
-
 		updateStats();
 
 		if (mediaState.getMediaListSize() === 0) {
