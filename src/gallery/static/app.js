@@ -128,11 +128,6 @@ async function updateAllTags() {
 
 	allTagsFilter.innerHTML = '';
 	tags['data'].forEach(tag => {
-		let tagStat = TAG_STATUS.INACTIVE;
-		if (filterState.isTagActive(tag)) {
-			tagStat = TAG_STATUS.ACTIVE;
-		}
-
 		const button = createTagButton(
 			tag,
 			{
@@ -160,7 +155,7 @@ async function updateAllTags() {
 					});
 				}
 			},
-			tagStat
+			filterState.getTagState(tag)
 		);
 		allTagsFilter.appendChild(button);
 	});

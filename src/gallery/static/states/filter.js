@@ -1,3 +1,5 @@
+import { TAG_STATUS } from "./tags.js";
+
 class FilterState {
 	tags = {
 		active: new Set(),
@@ -25,11 +27,12 @@ class FilterState {
 		return Array.from(this.tags.inverse);
 	}
 
-	isTagActive(tag) {
-		this.tags.active.has(tag);
-	}
-	isTagInverse(tag) {
-		this.tags.inverse.has(tag);
+	getTagState(tag) {
+		if (this.tags.active.has(tag))
+			return TAG_STATUS.ACTIVE;
+		if (this.tags.inverse.has(tag))
+			return TAG_STATUS.INVERSE;
+		return TAG_STATUS.INACTIVE;
 	}
 
 	clearTags() {
