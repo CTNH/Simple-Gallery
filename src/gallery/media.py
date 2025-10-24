@@ -1,11 +1,12 @@
 from models.models import Media, MediaPath, MediaTag
-from sqlalchemy import func as sqlfunc, or_
+from sqlalchemy import func as sqlfunc, or_, select
 from models import db
 
 
 def getMediaInfo(
     pathFilter: str = None,
     tagsFilter: list = None,
+    itagsFilter: list = None,
     typeFilter: list = None
 ):
     rows = db.session.query(
@@ -48,14 +49,27 @@ def getMediaInfo(
         rows = (
             rows
             .join(MediaTag, Media.hash == MediaTag.hash)
-            # Match ANY tag
+            # Match ANY tag in filter
             .filter(MediaTag.tag.in_(tagsFilter))
-            # Match ALL tags
+            # Match ALL tags in filter
             .group_by(MediaTag.hash)
+            # Count number of tag matches for hash
             .having(
                 sqlfunc.count(
                     sqlfunc.distinct(MediaTag.tag)
                 ) == len(tagsFilter)
+            )
+        )
+
+    # Exclude media with any tags in itagsFilter
+    if itagsFilter is not None and len(itagsFilter) > 0:
+        rows = rows.filter(
+            ~Media.hash.in_(
+                select(
+                    rows.session.query(MediaTag.hash)
+                    .filter(MediaTag.tag.in_(itagsFilter))
+                    .subquery()
+                )
             )
         )
 
