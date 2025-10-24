@@ -38,12 +38,6 @@ let lastActiveMode = Modes.none;
 
 let handleInputExtra = null;
 
-let cssRules = {};
-const sheet = document.styleSheets[0].cssRules;
-for (let i = 0; i < sheet.length; i++) {
-	cssRules[sheet[i].selectorText] = sheet[i];
-}
-
 // Fetch media info from API
 async function updateAllMedia(queryParams='') {
 	const response = await fetch('/api/media' + queryParams);
@@ -619,14 +613,12 @@ function toggleSelectionMode() {
 	if (activeMode === Modes.select) {
 		activeMode = Modes.none;
 		selectModeBar.classList.remove('active');
-		cssRules['.selection-checkbox'].style.opacity = 0;
-		cssRules['.selection-checkbox'].style.pointerEvents = 'none';
+		document.getElementById('gallery').classList.remove('select-mode');
 	}
 	else {
 		activeMode = Modes.select;
 		selectModeBar.classList.add('active');
-		cssRules['.selection-checkbox'].style.pointerEvents = 'all';
-		cssRules['.selection-checkbox'].style.opacity = 1;
+		document.getElementById('gallery').classList.add('select-mode');
 	}
 }
 SELECT_MODE_CHECKBOX.addEventListener('change', function() {

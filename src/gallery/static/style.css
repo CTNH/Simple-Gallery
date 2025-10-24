@@ -637,6 +637,11 @@ body {
 	box-shadow: rgba(0, 0, 0, 0.25) 0px -4px 1px 0px inset
 }
 
+#gallery.select-mode .selection-checkbox {
+	pointer-events: all;
+	opacity: 1;
+}
+
 .selection-checkbox {
 	position: absolute;
 	top: 0px;
