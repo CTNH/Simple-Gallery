@@ -58,7 +58,7 @@ async function loadMedia({pushState = true} = {}) {
 	}
 
 	let path = null;
-	let tags = [];
+	let tags = [], itags = [], types = [];
 	// Parse link filters
 	if (window.location.pathname.startsWith('/search')) {
 		window.location.search.slice(1).split('&').forEach(query => {
@@ -72,13 +72,27 @@ async function loadMedia({pushState = true} = {}) {
 					tags.push(fieldVal);
 					break;
 
+				case 'itag':
+					itags.push(fieldVal);
+					break;
+
+				case 'types':
+					types.push(fieldVal);
+					break;
+
 				default:
 					break;
 			}
 		});
 	}
 
-	loadMediaByFilter({path: path, tags: tags, pushState: pushState});
+	loadMediaByFilter({
+		path: path,
+		tags: tags,
+		inverseTags: itags,
+		types: types,
+		pushState: pushState
+	});
 	updateAllTags();
 }
 
@@ -98,6 +112,7 @@ async function addActiveFilters({tags = [], types = []}) {
 	loadMediaByFilter({
 		path: currentPath,
 		tags: filterState.getAllTagsActive(),
+		inverseTags: filterState.getAllTagsInverse(),
 		types: filterState.getTypes()
 	});
 }
@@ -123,10 +138,27 @@ async function updateAllTags() {
 			{
 				inactive: t => {
 					filterState.setTagInactive(t);
-					loadMediaByFilter({path: currentPath, tags: filterState.getAllTagsActive()});
+					loadMediaByFilter({
+						path: currentPath,
+						tags: filterState.getAllTagsActive(),
+						inverseTags: filterState.getAllTagsInverse(),
+						types: filterState.getTypes()
+					});
 				},
 				active: handleTagButton,
-				inverse: ()=>{}
+				inverse: (t) => {
+					if (activeMode === Modes.tagedit) {
+						openTagEditPrompt(t);
+						return;
+					}
+					filterState.setTagInverse(t);
+					loadMediaByFilter({
+						path: currentPath,
+						tags: filterState.getAllTagsActive(),
+						inverseTags: filterState.getAllTagsInverse(),
+						types: filterState.getTypes()
+					});
+				}
 			},
 			tagStat
 		);
@@ -135,7 +167,13 @@ async function updateAllTags() {
 
 }
 
-async function loadMediaByFilter({path = null, tags = [], types = [], pushState = true} = {}) {
+async function loadMediaByFilter({
+	path = null,
+	tags = [],
+	inverseTags = [],
+	types = [],
+	pushState = true
+} = {}) {
 	filterState.clearTags();
 	filterState.clearTypes();
 	selectionState.clear();
@@ -161,6 +199,10 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 			queryparam.push("tag="+tag);
 			filterState.setTagActive(tag);
 		}
+		inverseTags.forEach((tag) => {
+			queryparam.push("itag="+tag);
+			filterState.setTagInverse(tag);
+		});
 
 		if (types.length > 0) {
 			for (const t of types) {
@@ -206,8 +248,13 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 	}
 }
 
-function addPathFilter(path, invert = false) {
-	loadMediaByFilter({path: path, tags: filterState.getAllTagsActive()})
+function addPathFilter(path) {
+	loadMediaByFilter({
+		path: path,
+		tags: filterState.getAllTagsActive(),
+		inverseTags: filterState.getAllTagsInverse(),
+		types: filterState.getTypes()
+	});
 }
 
 function openTagEditPrompt(tag) {
