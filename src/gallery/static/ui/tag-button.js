@@ -1,8 +1,4 @@
-export const TAG_STATUS = {
-	INACTIVE: 0,
-	ACTIVE: 1,
-	INVERSE: 2
-};
+import { TAG_STATUS } from "../states/tags.js";
 
 export function createTagButton(
 	tag,
@@ -30,7 +26,7 @@ export function createTagButton(
 
 	elem.addEventListener('click', () => {
 		// Cycle status
-		stat = (stat + 1) % 2;
+		stat = (stat + 1) % 3;
 
 		switch (stat) {
 			case TAG_STATUS.INACTIVE:

@@ -1,20 +1,20 @@
 import { clearCache, getJSONCache } from "./cache.js";
 import { EVENTNAMES, galleryEvents } from "./events/galleryevents.js";
+import { filterState } from "./states/filter.js";
 import { mediaState } from "./states/media.js";
 import { mouseState } from "./states/mouse.js";
 import { selectionState } from "./states/selection.js";
+import { TAG_STATUS } from "./states/tags.js";
 import { touchState } from "./states/touch.js";
 import { createPathButtons, ismobile } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
 import { infoPanel } from "./ui/infopanel.js";
 import { lightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
-import { createTagButton, TAG_STATUS } from "./ui/tag-button.js";
+import { createTagButton } from "./ui/tag-button.js";
 import { createToast } from "./ui/toast.js";
 import { api_rotate } from "./utils/api.js";
 
-const activeTags = new Set();
-const activeTypes = new Set();
 const GALLERY_CONTAINER = document.getElementById('gallery');
 const STATS_ELEM = document.getElementById('stats');
 const SELECT_MODE_CHECKBOX = document.getElementById('select-mode-checkbox');
@@ -85,31 +85,21 @@ async function loadMedia({pushState = true} = {}) {
 async function addActiveFilters({tags = [], types = []}) {
 	if (tags.length > 0) {
 		tags.forEach(tag => {
-			activeTags.add(tag);
+			filterState.setTagActive(tag);
 		});
 	}
 
 	if (types.length > 0) {
 		types.forEach(type => {
-			activeTypes.add(type);
+			filterState.addType(type);
 		});
 	}
 
 	loadMediaByFilter({
 		path: currentPath,
-		tags: Array.from(activeTags),
-		types: Array.from(activeTypes)
+		tags: filterState.getAllTagsActive(),
+		types: filterState.getTypes()
 	});
-}
-
-async function removeActiveFilters({tags = []}) {
-	if (tags.length == 0) {
-		return;
-	}
-	tags.forEach(tag => {
-		activeTags.delete(tag);
-	});
-	loadMediaByFilter({path: currentPath, tags: Array.from(activeTags)});
 }
 
 async function updateAllTags() {
@@ -124,14 +114,17 @@ async function updateAllTags() {
 	allTagsFilter.innerHTML = '';
 	tags['data'].forEach(tag => {
 		let tagStat = TAG_STATUS.INACTIVE;
-		if (activeTags.has(tag)) {
+		if (filterState.isTagActive(tag)) {
 			tagStat = TAG_STATUS.ACTIVE;
 		}
 
 		const button = createTagButton(
 			tag,
 			{
-				inactive: t => { removeActiveFilters({ tags: [t] }) },
+				inactive: t => {
+					filterState.setTagInactive(t);
+					loadMediaByFilter({path: currentPath, tags: filterState.getAllTagsActive()});
+				},
 				active: handleTagButton,
 				inverse: ()=>{}
 			},
@@ -143,8 +136,8 @@ async function updateAllTags() {
 }
 
 async function loadMediaByFilter({path = null, tags = [], types = [], pushState = true} = {}) {
-	activeTags.clear();
-	activeTypes.clear();
+	filterState.clearTags();
+	filterState.clearTypes();
 	selectionState.clear();
 	updateSelectModeMediaCount();
 	SELECT_MODE_CHECKBOX.checked = false;
@@ -166,14 +159,14 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 
 		for (const tag of tags) {
 			queryparam.push("tag="+tag);
-			activeTags.add(tag);
+			filterState.setTagActive(tag);
 		}
 
 		if (types.length > 0) {
 			for (const t of types) {
-				activeTypes.add(t);
+				filterState.addType(t);
 			}
-			queryparam.push("types=" + [...activeTypes].join(','));
+			queryparam.push("types=" + filterState.getTypes().join(','));
 		}
 
 		const joinedParams = queryparam.length > 0 ? ("?" + queryparam.join('&')) : '';
@@ -213,8 +206,8 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 	}
 }
 
-function addPathFilter(path) {
-	loadMediaByFilter({path: path, tags: Array.from(activeTags)})
+function addPathFilter(path, invert = false) {
+	loadMediaByFilter({path: path, tags: filterState.getAllTagsActive()})
 }
 
 function openTagEditPrompt(tag) {
