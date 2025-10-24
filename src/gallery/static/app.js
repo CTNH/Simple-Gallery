@@ -9,6 +9,7 @@ import { renderGallery } from "./ui/gallery.js";
 import { infoPanel } from "./ui/infopanel.js";
 import { lightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
+import { createTagButton, TAG_STATUS } from "./ui/tag-button.js";
 import { createToast } from "./ui/toast.js";
 import { api_rotate } from "./utils/api.js";
 
@@ -78,6 +79,7 @@ async function loadMedia({pushState = true} = {}) {
 	}
 
 	loadMediaByFilter({path: path, tags: tags, pushState: pushState});
+	updateAllTags();
 }
 
 async function addActiveFilters({tags = [], types = []}) {
@@ -121,13 +123,23 @@ async function updateAllTags() {
 
 	allTagsFilter.innerHTML = '';
 	tags['data'].forEach(tag => {
-		const a = document.createElement('a');
-		a.textContent = tag;
-		a.addEventListener('click', () => {
-			handleTagButton(tag);
-		});
-		allTagsFilter.appendChild(a);
+		let tagStat = TAG_STATUS.INACTIVE;
+		if (activeTags.has(tag)) {
+			tagStat = TAG_STATUS.ACTIVE;
+		}
+
+		const button = createTagButton(
+			tag,
+			{
+				inactive: t => { removeActiveFilters({ tags: [t] }) },
+				active: handleTagButton,
+				inverse: ()=>{}
+			},
+			tagStat
+		);
+		allTagsFilter.appendChild(button);
 	});
+
 }
 
 async function loadMediaByFilter({path = null, tags = [], types = [], pushState = true} = {}) {
@@ -176,8 +188,6 @@ async function loadMediaByFilter({path = null, tags = [], types = [], pushState 
 		const pathFilter = document.getElementById('filter-path');
 		pathFilter.innerHTML = '';
 		pathFilter.appendChild(createPathButtons(path, addPathFilter));
-
-		updateAllTags();
 
 		const activeTagsFilter = document.getElementById('filter-active-tags');
 		activeTagsFilter.innerHTML = '';

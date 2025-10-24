@@ -473,12 +473,23 @@ body {
 	max-width: 100%;
 	word-wrap: break-word;
 	overflow-wrap: anywhere;
+	user-select: none;
 }
 
 #filter-path a:hover,
 .filter-values a:hover,
 .info-value a:hover {
 	background: rgba(255, 255, 255, 0.5);
+}
+
+.filter-values a.inactive {
+	background: rgba(255, 255, 255, 0.2);
+}
+.filter-values a.active {
+	background: rgba(0, 153, 255, 0.65);
+}
+.filter-values a.inverse {
+	background: rgba(204, 51, 51, 0.65);
 }
 
 /* Mobile specific adjustments */
