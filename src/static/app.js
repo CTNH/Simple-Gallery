@@ -4,7 +4,6 @@ import { filterState } from "./states/filter.js";
 import { mediaState } from "./states/media.js";
 import { mouseState } from "./states/mouse.js";
 import { selectionState } from "./states/selection.js";
-import { TAG_STATUS } from "./states/tags.js";
 import { touchState } from "./states/touch.js";
 import { createPathButtons, ismobile } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";

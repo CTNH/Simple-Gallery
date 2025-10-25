@@ -39,7 +39,7 @@ def lightbox(hash):
 
 @bp.route('/static/<path:filename>')
 def serve_static(filename):
-    return send_from_directory("static", filename)
+    return send_from_directory("../static", filename)
 
 
 @bp.route('/api/media')
