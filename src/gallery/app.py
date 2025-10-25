@@ -5,7 +5,7 @@ from models.models import Media, MediaPath
 from gallery.routes import bp
 from gallery.media import getMediaInfo
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=None)
 
 
 def initDB(

@@ -39,7 +39,9 @@ def lightbox(hash):
 
 @bp.route('/static/<path:filename>')
 def serve_static(filename):
-    return send_from_directory("../static", filename)
+    return send_from_directory(
+        pathJoin(current_app.root_path, '../static'), filename
+    )
 
 
 @bp.route('/api/media')
@@ -49,7 +51,12 @@ def get_mediaInfo():
     tagsFilter = frequest.args.getlist('tag')
     itagsFilter = frequest.args.getlist('itag')
     typeFilter = frequest.args.get('types', default='').split(',')
-    cacheKey = (pathFilter, frozenset(tagsFilter), frozenset(itagsFilter), frozenset(typeFilter))
+    cacheKey = (
+        pathFilter,
+        frozenset(tagsFilter),
+        frozenset(itagsFilter),
+        frozenset(typeFilter)
+    )
     if typeFilter == ['']:
         typeFilter = None
 
