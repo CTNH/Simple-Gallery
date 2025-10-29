@@ -4,13 +4,13 @@ import { filterState } from "./states/filter.js";
 import { mediaState } from "./states/media.js";
 import { mouseState } from "./states/mouse.js";
 import { selectionState } from "./states/selection.js";
+import { TAG_STATUS } from "./states/tags.js";
 import { touchState } from "./states/touch.js";
 import { createPathButtons, ismobile } from "./ui/dom.js";
 import { renderGallery } from "./ui/gallery.js";
 import { infoPanel } from "./ui/infopanel.js";
 import { lightbox } from "./ui/lightbox.js";
 import { openInputPrompt, closeInputPrompt, showInputErr } from "./ui/prompt.js";
-import { createTagButton } from "./ui/tag-button.js";
 import { createToast } from "./ui/toast.js";
 import { api_rotate } from "./utils/api.js";
 
@@ -111,6 +111,10 @@ async function addActiveFilters({tags = [], types = []}) {
 		});
 	}
 
+	loadMediaByCurrentFilters();
+}
+
+function loadMediaByCurrentFilters() {
 	loadMediaByFilter({
 		path: currentPath,
 		tags: filterState.getAllTagsActive(),
@@ -128,43 +132,47 @@ async function updateAllTags() {
 		return
 	}
 
+	const editingTag = (t) => {
+		if (activeMode === Modes.tagedit) {
+			openTagEditPrompt(t);
+			return true;
+		}
+		return false;
+	}
+
+	const filterInactive = t => { filterState.setTagInactive(t) };
+	const filterActive = t => { filterState.setTagActive(t) };
+	const filterInverse = t => { filterState.setTagInverse(t) };
+
 	allTagsFilter.innerHTML = '';
 	tags['data'].forEach(tag => {
-		const button = createTagButton(
-			tag,
-			{
-				inactive: t => {
-					filterState.setTagInactive(t);
-					loadMediaByFilter({
-						path: currentPath,
-						tags: filterState.getAllTagsActive(),
-						inverseTags: filterState.getAllTagsInverse(),
-						types: filterState.getTypes()
-					});
-				},
-				active: (tag) => {
-					if (activeMode === Modes.tagedit) {
-						openTagEditPrompt(tag);
-						return;
-					}
-					addActiveTagFilter(tag);
-				},
-				inverse: (t) => {
-					if (activeMode === Modes.tagedit) {
-						openTagEditPrompt(t);
-						return;
-					}
-					filterState.setTagInverse(t);
-					loadMediaByFilter({
-						path: currentPath,
-						tags: filterState.getAllTagsActive(),
-						inverseTags: filterState.getAllTagsInverse(),
-						types: filterState.getTypes()
-					});
-				}
-			},
-			filterState.getTagState(tag)
-		);
+		const button = document.createElement('a');
+		button.textContent = tag;
+
+		let callback;
+		switch(filterState.getTagState(tag)) {
+			case TAG_STATUS.INACTIVE:
+				button.className = 'inactive';
+				callback = filterActive;
+				break;
+			case TAG_STATUS.ACTIVE:
+				button.className = 'active';
+				callback = filterInverse;
+				break;
+			case TAG_STATUS.INVERSE:
+				button.className = 'inverse';
+				callback = filterInactive;
+				break;
+		}
+
+		button.addEventListener('click', () => {
+			if (editingTag(tag))
+				return;
+
+			callback(tag);
+			loadMediaByCurrentFilters();
+		});
+
 		allTagsFilter.appendChild(button);
 	});
 
@@ -276,6 +284,8 @@ function openTagEditPrompt(tag) {
 }
 
 function handleTagRemoveButtons(tag, hash) {
+	if (!confirm(`Remove tag ${tag} from media?`))
+		return;
 	tagPromptRequest({
 		data: {
 			'tags': [tag],
