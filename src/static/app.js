@@ -94,6 +94,10 @@ async function loadMedia({pushState = true} = {}) {
 	});
 }
 
+function addActiveTagFilter(tag) {
+	addActiveFilters({ tags: [tag] });
+}
+
 async function addActiveFilters({tags = [], types = []}) {
 	if (tags.length > 0) {
 		tags.forEach(tag => {
@@ -138,7 +142,13 @@ async function updateAllTags() {
 						types: filterState.getTypes()
 					});
 				},
-				active: handleTagButton,
+				active: (tag) => {
+					if (activeMode === Modes.tagedit) {
+						openTagEditPrompt(tag);
+						return;
+					}
+					addActiveTagFilter(tag);
+				},
 				inverse: (t) => {
 					if (activeMode === Modes.tagedit) {
 						openTagEditPrompt(t);
@@ -265,13 +275,6 @@ function openTagEditPrompt(tag) {
 	});
 }
 
-function handleTagButton(tag) {
-	if (activeMode === Modes.tagedit) {
-		openTagEditPrompt(tag);
-		return;
-	}
-	addActiveFilters({tags: [tag]});
-}
 function handleTagRemoveButtons(tag, hash) {
 	tagPromptRequest({
 		data: {
@@ -323,7 +326,7 @@ async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 			},
 			mediaCount: mediaState.getMediaListSize(),
 			handlePathButtons: addPathFilter,
-			handleTagButtons: handleTagButton,
+			handleTagButtons: addActiveTagFilter,
 			tagRemoveHandler: handleTagRemoveButtons,
 		});
 		document.getElementById('info-panel').classList.add('active');
@@ -366,7 +369,7 @@ galleryEvents.on(
 			},
 			mediaCount: mediaState.getMediaListSize(),
 			handlePathButtons: addPathFilter,
-			handleTagButtons: handleTagButton,
+			handleTagButtons: addActiveTagFilter,
 			tagRemoveHandler: handleTagRemoveButtons,
 		});
 		lightbox.rotateLightboxImg(
@@ -408,7 +411,7 @@ async function rotate(clockwise) {
 			},
 			mediaCount: mediaState.getMediaListSize(),
 			handlePathButtons: addPathFilter,
-			handleTagButtons: handleTagButton,
+			handleTagButtons: addActiveTagFilter,
 			tagRemoveHandler: handleTagRemoveButtons,
 		});
 	}
