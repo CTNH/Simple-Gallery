@@ -425,6 +425,28 @@ body {
 	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.info-tag-container {
+	margin: 2px;
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: 4px;
+}
+.info-tag {
+	padding: 4px;
+	border-radius: 4px;
+	cursor: pointer;
+	user-select: none;
+}
+.info-tag:hover {
+	background: rgba(255, 255, 255, 0.5);
+}
+
+.info-item div {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	flex-wrap: wrap;
+	word-break: break-word;
+}
 .info-item {
 	display: flex;
 	justify-content: space-between;
@@ -724,6 +746,7 @@ body {
 	transition: all 0.5s ease;
 	border-top: 2px solid #555;
 	font-weight: bold;
+	z-index: 9000;
 }
 
 #scroll-to-top-button {

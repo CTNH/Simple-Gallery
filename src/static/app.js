@@ -92,7 +92,6 @@ async function loadMedia({pushState = true} = {}) {
 		types: types,
 		pushState: pushState
 	});
-	updateAllTags();
 }
 
 async function addActiveFilters({tags = [], types = []}) {
@@ -235,6 +234,7 @@ async function loadMediaByFilter({
 			});
 		}
 
+		updateAllTags();
 		mediaState.setCurrentMedia(0);
 	} catch (error) {
 		console.error('Error loading images:', error);
@@ -271,6 +271,17 @@ function handleTagButton(tag) {
 		return;
 	}
 	addActiveFilters({tags: [tag]});
+}
+function handleTagRemoveButtons(tag, hash) {
+	tagPromptRequest({
+		data: {
+			'tags': [tag],
+			'hashes': [hash],
+		},
+		method: 'DELETE',
+		toastMsg: `Successfully removed tag '${tag}' from media`,
+		errorPrefix: "Error removing tag:<br>"
+	});
 }
 
 function updateStats() {
@@ -312,7 +323,8 @@ async function openLightbox({idx = null, hash = null, updateHistory = true}) {
 			},
 			mediaCount: mediaState.getMediaListSize(),
 			handlePathButtons: addPathFilter,
-			handleTagButtons: handleTagButton
+			handleTagButtons: handleTagButton,
+			tagRemoveHandler: handleTagRemoveButtons,
 		});
 		document.getElementById('info-panel').classList.add('active');
 	}
@@ -354,7 +366,8 @@ galleryEvents.on(
 			},
 			mediaCount: mediaState.getMediaListSize(),
 			handlePathButtons: addPathFilter,
-			handleTagButtons: handleTagButton
+			handleTagButtons: handleTagButton,
+			tagRemoveHandler: handleTagRemoveButtons,
 		});
 		lightbox.rotateLightboxImg(
 			mediaState.getCurrentMedia().rotation,
@@ -395,7 +408,8 @@ async function rotate(clockwise) {
 			},
 			mediaCount: mediaState.getMediaListSize(),
 			handlePathButtons: addPathFilter,
-			handleTagButtons: handleTagButton
+			handleTagButtons: handleTagButton,
+			tagRemoveHandler: handleTagRemoveButtons,
 		});
 	}
 }

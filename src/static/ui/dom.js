@@ -1,4 +1,4 @@
-import { ElemWrapper } from "./elements.js";
+import { createDiv, ElemWrapper } from "./elements.js";
 
 function addPathButton(name, fullpath, handlePathButton, parent) {
 	(new ElemWrapper('a'))
@@ -28,15 +28,27 @@ export function createPathButtons(path, handlePathButton) {
 	return container;
 }
 
-export function addTagButtons(tags, handleButton, parent) {
+export function addTagButtons({
+	hash,
+	tags,
+	filterHandler,
+	removeHandler,
+	parent
+}) {
 	if (tags.length == 0) {
 		parent.appendChild(document.createTextNode("None"));
 	}
 	tags.forEach(tag => {
-		(new ElemWrapper('a'))
+		const container = createDiv({ className: 'info-tag-container' });
+		createDiv({ className: 'info-tag' })
+			.setHTML('&times;')
+			.addEventListener('click', () => { removeHandler(tag, hash) })
+			.appendtoWrapper(container);
+		createDiv({ className: 'info-tag' })
 			.setText(tag)
-			.addEventListener('click', () => { handleButton(tag) })
-			.appendto(parent);
+			.addEventListener('click', () => { filterHandler(tag) })
+			.appendtoWrapper(container);
+		container.appendto(parent);
 	});
 }
 

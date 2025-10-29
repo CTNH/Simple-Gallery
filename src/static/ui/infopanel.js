@@ -32,14 +32,21 @@ class InfoPanel {
 		media,
 		mediaCount,
 		handlePathButtons,
-		handleTagButtons
+		handleTagButtons,
+		tagRemoveHandler,
 	}) {
 		if (!(media.hash in this.TAGS)) {
 			this.TAGS[media.hash] = await api_getTagsFromHash(media.hash);
 		}
 
 		const tagButtons = document.createElement('div');
-		addTagButtons(this.TAGS[media.hash], handleTagButtons, tagButtons);
+		addTagButtons({
+			hash: media.hash,
+			tags: this.TAGS[media.hash],
+			filterHandler: handleTagButtons,
+			removeHandler: tagRemoveHandler,
+			parent: tagButtons
+		});
 
 		const infoData = new Map([
 			["File Information", new Map([

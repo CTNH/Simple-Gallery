@@ -307,6 +307,7 @@ def addTag():
             'msg': error
         }), 400
 
+    current_app.config['media_cache'] = {}
     return jsonify({
         'success': True,
     }), 200
@@ -328,8 +329,17 @@ def removeTag():
             'msg': "At least one tag must be provided as a list!"
         }), 400
 
-    for tag in tags:
-        db.session.query(MediaTag).filter(MediaTag.tag == tag).delete()
+    hashes = data.get('hashes', [])
+    # No hash; delete any with tags
+    if hashes == [] or type(hashes) is not list:
+        for tag in tags:
+            db.session.query(MediaTag).filter(MediaTag.tag == tag).delete()
+    else:
+        for tag in tags:
+            db.session.query(MediaTag).filter(
+                MediaTag.tag == tag,
+                MediaTag.hash.in_(hashes)
+            ).delete()
     success, error = safeCommit()
     if not success:
         return jsonify({
@@ -337,6 +347,7 @@ def removeTag():
             'msg': error
         }), 400
 
+    current_app.config['media_cache'] = {}
     return jsonify({
         'success': True,
     }), 200
@@ -381,6 +392,7 @@ def renameTag():
             'msg': error
         }), 400
 
+    current_app.config['media_cache'] = {}
     return jsonify({
         'success': True,
     }), 200
